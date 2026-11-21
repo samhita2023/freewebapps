@@ -6,15 +6,18 @@
   <title>Free Web Apps</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --card-hover: #334155;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
-      --border: #334155;
-      --danger: #ef4444;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --badge-bg: #eff6ff;
+      --badge-text: #1d4ed8;
+      --admin-bg: #fef3c7;
+      --admin-text: #92400e;
+      --admin-border: #fcd34d;
     }
 
     * {
@@ -25,478 +28,563 @@
     }
 
     body {
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 2rem;
+      padding: 24px 16px 48px;
     }
 
-    header {
-      max-width: 1000px;
-      margin: 0 auto 2.5rem auto;
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 1rem;
     }
 
-    header h1 {
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .header h1 {
       font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .header p {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .admin-pill {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: var(--admin-bg);
+      color: var(--admin-text);
+      border: 1px solid var(--admin-border);
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .admin-pill.active {
+      display: inline-flex;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-admin {
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 11px 15px;
+      font-size: 0.9rem;
       font-weight: 700;
-    }
-
-    button {
       cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
 
-    .btn-primary {
-      background: var(--accent);
-      color: #0f172a;
-      padding: 0.6rem 1.1rem;
+    .btn-admin:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .btn-admin.unlocked {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+
+    .btn-add {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 18px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      font-size: 0.95rem;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+      transition: background 0.15s ease, transform 0.1s ease;
     }
 
-    .btn-primary:hover {
-      background: var(--accent-hover);
-      color: #fff;
+    .btn-add:hover {
+      background: var(--primary-hover);
     }
 
-    .btn-secondary {
-      background: var(--card-bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-    }
-
-    .btn-secondary:hover {
-      background: var(--card-hover);
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: #fff;
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-      margin-right: auto;
-    }
-
-    .btn-danger:hover {
-      opacity: 0.9;
+    .btn-add:active {
+      transform: scale(0.98);
     }
 
     .grid {
-      max-width: 1000px;
-      margin: 0 auto;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1.25rem;
+      gap: 18px;
     }
 
     .card {
-      background: var(--card-bg);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
+      border-radius: 16px;
+      padding: 20px;
       display: flex;
+      flex-direction: column;
       justify-content: space-between;
-      align-items: center;
-      color: inherit;
-      cursor: pointer;
-      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      min-height: 170px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
 
     .card:hover {
-      transform: translateY(-3px);
-      background: var(--card-hover);
-      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      border-color: #cbd5e1;
     }
 
-    .card-info {
-      flex: 1;
-      overflow: hidden;
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
     }
 
-    .card-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .card-file {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    .edit-btn {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--muted);
+    .card-number {
       width: 36px;
       height: 36px;
-      border-radius: 8px;
+      border-radius: 10px;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-weight: 800;
+      font-size: 1rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      margin-left: 0.75rem;
-      font-size: 1rem;
     }
 
-    .edit-btn:hover {
-      background: var(--accent);
-      color: #0f172a;
+    .card-top-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-edit {
+      display: none;
+      background: #eff6ff;
+      color: var(--primary);
+      border: 1px solid #bfdbfe;
+      border-radius: 7px;
+      padding: 4px 9px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-edit.visible {
+      display: inline-block;
+    }
+
+    .btn-edit:hover {
+      background: #dbeafe;
+    }
+
+    .card-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+
+    .card-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-bottom: 16px;
+      word-break: break-word;
+    }
+
+    .card-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: background 0.15s ease;
+    }
+
+    .card-link:hover {
+      background: #e2e8f0;
     }
 
     /* Modals */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.72);
+      background: rgba(15, 23, 42, 0.5);
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-      z-index: 100;
+      padding: 16px;
+      z-index: 50;
     }
 
-    .modal-backdrop.active {
+    .modal-backdrop.open {
       display: flex;
     }
 
     .modal {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 14px;
+      background: #fff;
       width: 100%;
       max-width: 400px;
-      padding: 1.5rem;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
     }
 
     .modal h2 {
-      margin-bottom: 1rem;
-      font-size: 1.25rem;
+      font-size: 1.2rem;
+      margin-bottom: 6px;
     }
 
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-group label {
-      display: block;
+    .modal p {
       font-size: 0.85rem;
       color: var(--muted);
-      margin-bottom: 0.4rem;
+      margin-bottom: 14px;
     }
 
-    .form-group input {
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 5px;
+    }
+
+    .field input,
+    .field textarea {
       width: 100%;
-      padding: 0.65rem 0.8rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
       font-size: 0.95rem;
     }
 
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--accent);
+    .field textarea {
+      resize: vertical;
+      min-height: 76px;
+    }
+
+    .error-msg {
+      color: #dc2626;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-top: -6px;
+      margin-bottom: 10px;
+      min-height: 18px;
     }
 
     .modal-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 0.6rem;
-      margin-top: 1.25rem;
+      gap: 10px;
+      margin-top: 14px;
     }
 
-    .error-text {
-      color: #f87171;
-      font-size: 0.85rem;
-      margin-top: 0.4rem;
-      display: none;
+    .btn-cancel {
+      background: #f1f5f9;
+      color: var(--text);
+      border: none;
+      border-radius: 9px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-save {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Free Web Apps</h1>
-    <button type="button" class="btn-primary" id="addCardBtn" title="Add Card">
-      <span>＋</span> Add Card
-    </button>
+<div class="container">
+  <header class="header">
+    <div class="header-left">
+      <div>
+        <h1>Free Web Apps</h1>
+        <p>Browser-based tools and utilities directory</p>
+      </div>
+      <span id="adminBadge" class="admin-pill">Admin Unlocked</span>
+    </div>
+
+    <div class="header-actions">
+      <button id="adminToggleBtn" type="button" class="btn-admin" onclick="handleAdminButton()">
+        Admin Mode
+      </button>
+      <button type="button" class="btn-add" onclick="openAddModal()">+ Add Card</button>
+    </div>
   </header>
 
-  <main class="grid" id="cardGrid">
-    <div class="card" data-name="utility" data-file="utility.html">
-      <div class="card-info">
-        <div class="card-title">utility</div>
-        <div class="card-file">utility.html</div>
-      </div>
-      <button type="button" class="edit-btn" title="Rename / Change File / Delete" aria-label="Edit Card">✎</button>
-    </div>
-  </main>
+  <main id="cardsGrid" class="grid"></main>
+</div>
 
-  <!-- Password Modal -->
-  <div class="modal-backdrop" id="passwordModal">
-    <div class="modal">
-      <h2>Enter Password</h2>
-      <div class="form-group">
-        <label for="passwordInput">Password (Default: 4206)</label>
-        <input type="password" id="passwordInput" placeholder="••••" autocomplete="off" />
-        <div class="error-text" id="passwordError">Incorrect password. Try 4206.</div>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-secondary" id="cancelPasswordBtn">Cancel</button>
-        <button type="button" class="btn-primary" id="verifyPasswordBtn">Unlock</button>
-      </div>
+<!-- Admin Password Modal -->
+<div id="adminModal" class="modal-backdrop">
+  <div class="modal">
+    <h2>Admin Mode Login</h2>
+    <p>Enter password to edit app names and descriptions</p>
+    <div class="field">
+      <label for="adminPassword">Password</label>
+      <input
+        type="password"
+        id="adminPassword"
+        placeholder="Enter password"
+        onkeydown="if (event.key === 'Enter') verifyAdminPassword();"
+      />
+    </div>
+    <div id="adminError" class="error-msg"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" onclick="closeAdminModal()">Cancel</button>
+      <button type="button" class="btn-save" onclick="verifyAdminPassword()">Unlock</button>
     </div>
   </div>
+</div>
 
-  <!-- Add / Edit / Delete Card Modal -->
-  <div class="modal-backdrop" id="cardModal">
-    <div class="modal">
-      <h2 id="cardModalTitle">Add Card</h2>
-      <div class="form-group">
-        <label for="cardNameInput">Card Name</label>
-        <input type="text" id="cardNameInput" placeholder="e.g. waterring" autocomplete="off" />
-      </div>
-      <div class="form-group">
-        <label for="cardFileInput">HTML File Name</label>
-        <input type="text" id="cardFileInput" placeholder="e.g. waterring.html" autocomplete="off" />
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-danger" id="deleteCardBtn" style="display:none;">Delete</button>
-        <button type="button" class="btn-secondary" id="cancelCardBtn">Cancel</button>
-        <button type="button" class="btn-primary" id="saveCardBtn">Save & Download HTML</button>
-      </div>
+<!-- Add / Edit Card Modal -->
+<div id="cardModal" class="modal-backdrop">
+  <div class="modal">
+    <h2 id="cardModalHeading">Add Card #11</h2>
+    <p id="cardModalSub">Configure the app name and description</p>
+    <div class="field">
+      <label for="appTitle">App Name</label>
+      <input type="text" id="appTitle" placeholder="e.g., PDF Merger Tool" />
+    </div>
+    <div class="field">
+      <label for="appDesc">Short Description</label>
+      <textarea id="appDesc" placeholder="Brief summary of what this web app does..."></textarea>
+    </div>
+    <div class="field">
+      <label for="appUrl">App Link (URL)</label>
+      <input type="url" id="appUrl" placeholder="https://..." />
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" onclick="closeCardModal()">Cancel</button>
+      <button type="button" class="btn-save" onclick="saveCardModal()">Save Card</button>
     </div>
   </div>
+</div>
 
-  <script>
-    (function () {
-      const PASSWORD = "4206";
-      let isUnlocked = false;
-      let pendingAction = null;
-      let activeCardEl = null;
+<script>
+  const ADMIN_PASSWORD = "4206";
+  const STORAGE_KEY = "free_web_apps_directory_v1";
 
-      const cardGrid = document.getElementById("cardGrid");
-      const addCardBtn = document.getElementById("addCardBtn");
-      const passwordModal = document.getElementById("passwordModal");
-      const passwordInput = document.getElementById("passwordInput");
-      const passwordError = document.getElementById("passwordError");
-      const verifyPasswordBtn = document.getElementById("verifyPasswordBtn");
-      const cancelPasswordBtn = document.getElementById("cancelPasswordBtn");
+  const defaultCards = Array.from({ length: 10 }, (_, idx) => ({
+    title: `Web App ${idx + 1}`,
+    desc: `Free browser-based utility #${idx + 1}.`,
+    url: "#"
+  }));
 
-      const cardModal = document.getElementById("cardModal");
-      const cardModalTitle = document.getElementById("cardModalTitle");
-      const cardNameInput = document.getElementById("cardNameInput");
-      const cardFileInput = document.getElementById("cardFileInput");
-      const deleteCardBtn = document.getElementById("deleteCardBtn");
-      const cancelCardBtn = document.getElementById("cancelCardBtn");
-      const saveCardBtn = document.getElementById("saveCardBtn");
+  let isAdmin = false;
+  let editingIndex = null;
+  let cards = [];
 
-      function escapeHtml(str) {
-        const div = document.createElement("div");
-        div.textContent = str;
-        return div.innerHTML;
-      }
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    cards = saved ? JSON.parse(saved) : defaultCards;
+    if (!Array.isArray(cards) || cards.length === 0) cards = defaultCards;
+  } catch (e) {
+    cards = defaultCards;
+  }
 
-      function escapeAttr(str) {
-        return String(str)
-          .replace(/&/g, "&")
-          .replace(/"/g, """)
-          .replace(/'/g, "'")
-          .replace(/</g, "<")
-          .replace(/>/g, ">");
-      }
+  function persistCards() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    } catch (e) {}
+  }
 
-      function createCardElement(name, file) {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.setAttribute("data-name", name);
-        card.setAttribute("data-file", file);
-        card.innerHTML =
-          '<div class="card-info">' +
-            '<div class="card-title">' + escapeHtml(name) + '</div>' +
-            '<div class="card-file">' + escapeHtml(file) + '</div>' +
-          '</div>' +
-          '<button type="button" class="edit-btn" title="Rename / Change File / Delete" aria-label="Edit Card">✎</button>';
-        return card;
-      }
+  function renderCards() {
+    const grid = document.getElementById("cardsGrid");
+    grid.innerHTML = cards.map((card, i) => `
+      <article class="card">
+        <div>
+          <div class="card-top">
+            <span class="card-number">${i + 1}</span>
+            <div class="card-top-right">
+              <span class="card-tag">App #${i + 1}</span>
+              <button
+                type="button"
+                class="btn-edit ${isAdmin ? "visible" : ""}"
+                onclick="openEditModal(${i})"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+          <h2 class="card-title">${escapeHtml(card.title)}</h2>
+          <p class="card-desc">${escapeHtml(card.desc)}</p>
+        </div>
+        <a
+          class="card-link"
+          href="${escapeHtml(card.url || "#")}"
+          ${card.url && card.url !== "#" ? 'target="_blank" rel="noopener"' : ""}
+        >
+          Open App
+        </a>
+      </article>
+    `).join("");
+  }
 
-      function closeModals() {
-        passwordModal.classList.remove("active");
-        cardModal.classList.remove("active");
-      }
+  function updateAdminUI() {
+    const btn = document.getElementById("adminToggleBtn");
+    const badge = document.getElementById("adminBadge");
+    btn.textContent = isAdmin ? "Lock Admin" : "Admin Mode";
+    btn.classList.toggle("unlocked", isAdmin);
+    badge.classList.toggle("active", isAdmin);
+    renderCards();
+  }
 
-      function openCardModal(action) {
-        if (action.type === "add") {
-          activeCardEl = null;
-          cardModalTitle.textContent = "Add New Card";
-          cardNameInput.value = "";
-          cardFileInput.value = "";
-          deleteCardBtn.style.display = "none";
-        } else if (action.type === "edit") {
-          activeCardEl = action.cardEl;
-          cardModalTitle.textContent = "Rename Card & Set HTML File";
-          cardNameInput.value = activeCardEl.getAttribute("data-name") || "";
-          cardFileInput.value = activeCardEl.getAttribute("data-file") || "";
-          deleteCardBtn.style.display = "inline-block";
-        }
-        cardModal.classList.add("active");
-        setTimeout(() => cardNameInput.focus(), 50);
-      }
+  function handleAdminButton() {
+    if (isAdmin) {
+      isAdmin = false;
+      updateAdminUI();
+      return;
+    }
+    document.getElementById("adminPassword").value = "";
+    document.getElementById("adminError").textContent = "";
+    document.getElementById("adminModal").classList.add("open");
+    setTimeout(() => document.getElementById("adminPassword").focus(), 40);
+  }
 
-      function requestAuth(action) {
-        pendingAction = action;
-        if (isUnlocked) {
-          openCardModal(pendingAction);
-          return;
-        }
-        passwordInput.value = "";
-        passwordError.style.display = "none";
-        passwordModal.classList.add("active");
-        setTimeout(() => passwordInput.focus(), 50);
-      }
+  function closeAdminModal() {
+    document.getElementById("adminModal").classList.remove("open");
+  }
 
-      // Event delegation for grid cards and pencil icon
-      cardGrid.addEventListener("click", function (e) {
-        const editBtn = e.target.closest(".edit-btn");
-        if (editBtn) {
-          e.preventDefault();
-          e.stopPropagation();
-          const cardEl = editBtn.closest(".card");
-          if (cardEl) {
-            requestAuth({ type: "edit", cardEl: cardEl });
-          }
-          return;
-        }
+  function verifyAdminPassword() {
+    const entered = document.getElementById("adminPassword").value;
+    if (entered === ADMIN_PASSWORD) {
+      isAdmin = true;
+      closeAdminModal();
+      updateAdminUI();
+    } else {
+      document.getElementById("adminError").textContent = "Incorrect password.";
+    }
+  }
 
-        const cardEl = e.target.closest(".card");
-        if (cardEl) {
-          const targetFile = cardEl.getAttribute("data-file");
-          if (targetFile) {
-            window.location.href = targetFile;
-          }
-        }
+  function openAddModal() {
+    editingIndex = null;
+    const nextNum = cards.length + 1;
+    document.getElementById("cardModalHeading").textContent = `Add Card #${nextNum}`;
+    document.getElementById("cardModalSub").textContent = "Add a new web app card to the directory";
+    document.getElementById("appTitle").value = "";
+    document.getElementById("appDesc").value = "";
+    document.getElementById("appUrl").value = "";
+    document.getElementById("cardModal").classList.add("open");
+    setTimeout(() => document.getElementById("appTitle").focus(), 40);
+  }
+
+  function openEditModal(index) {
+    if (!isAdmin) return;
+    editingIndex = index;
+    const current = cards[index];
+    document.getElementById("cardModalHeading").textContent = `Edit Card #${index + 1}`;
+    document.getElementById("cardModalSub").textContent = "Update the app name, description, or URL";
+    document.getElementById("appTitle").value = current.title || "";
+    document.getElementById("appDesc").value = current.desc || "";
+    document.getElementById("appUrl").value = current.url && current.url !== "#" ? current.url : "";
+    document.getElementById("cardModal").classList.add("open");
+    setTimeout(() => document.getElementById("appTitle").focus(), 40);
+  }
+
+  function closeCardModal() {
+    editingIndex = null;
+    document.getElementById("cardModal").classList.remove("open");
+  }
+
+  function saveCardModal() {
+    const titleInput = document.getElementById("appTitle").value.trim();
+    const descInput = document.getElementById("appDesc").value.trim();
+    const urlInput = document.getElementById("appUrl").value.trim() || "#";
+
+    if (editingIndex !== null) {
+      const fallbackTitle = `Web App ${editingIndex + 1}`;
+      const fallbackDesc = `Free browser-based utility #${editingIndex + 1}.`;
+      cards[editingIndex] = {
+        title: titleInput || fallbackTitle,
+        desc: descInput || fallbackDesc,
+        url: urlInput
+      };
+    } else {
+      const nextNum = cards.length + 1;
+      cards.push({
+        title: titleInput || `Web App ${nextNum}`,
+        desc: descInput || `Free browser-based utility #${nextNum}.`,
+        url: urlInput
       });
+    }
 
-      // Plus / Add Card button asks password first
-      addCardBtn.addEventListener("click", function () {
-        requestAuth({ type: "add" });
-      });
+    persistCards();
+    renderCards();
+    closeCardModal();
+  }
 
-      function submitPassword() {
-        if (passwordInput.value === PASSWORD) {
-          isUnlocked = true;
-          passwordModal.classList.remove("active");
-          if (pendingAction) {
-            const actionToRun = pendingAction;
-            pendingAction = null;
-            openCardModal(actionToRun);
-          }
-        } else {
-          passwordError.style.display = "block";
-          passwordInput.focus();
-        }
-      }
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
-      verifyPasswordBtn.addEventListener("click", submitPassword);
-      passwordInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          submitPassword();
-        }
-      });
-
-      cancelPasswordBtn.addEventListener("click", closeModals);
-      cancelCardBtn.addEventListener("click", closeModals);
-
-      function serializeCardsMarkup() {
-        const cards = Array.from(cardGrid.querySelectorAll(".card"));
-        const inner = cards
-          .map(function (card) {
-            const name = card.getAttribute("data-name") || "";
-            const file = card.getAttribute("data-file") || "";
-            return [
-              '    <div class="card" data-name="' + escapeAttr(name) + '" data-file="' + escapeAttr(file) + '">',
-              '      <div class="card-info">',
-              '        <div class="card-title">' + escapeHtml(name) + '</div>',
-              '        <div class="card-file">' + escapeHtml(file) + '</div>',
-              '      </div>',
-              '      <button type="button" class="edit-btn" title="Rename / Change File / Delete" aria-label="Edit Card">✎</button>',
-              '    </div>'
-            ].join("\n");
-          })
-          .join("\n");
-
-        return '<main class="grid" id="cardGrid">\n' + inner + '\n  </main>';
-      }
-
-      function downloadUpdatedIndexHtml() {
-        const currentHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-        const updatedMain = serializeCardsMarkup();
-        const updatedHtml = currentHtml.replace(
-          /<main class="grid" id="cardGrid">[\s\S]*?<\/main>/,
-          updatedMain
-        );
-
-        const blob = new Blob([updatedHtml], { type: "text/html;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "index.html";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-
-      saveCardBtn.addEventListener("click", function () {
-        const name = cardNameInput.value.trim();
-        let file = cardFileInput.value.trim();
-
-        if (!name || !file) {
-          alert("Please enter both a card name and an HTML file name.");
-          return;
-        }
-
-        if (!file.endsWith(".html") && !file.startsWith("http")) {
-          file += ".html";
-        }
-
-        if (activeCardEl) {
-          const replacement = createCardElement(name, file);
-          cardGrid.replaceChild(replacement, activeCardEl);
-        } else {
-          cardGrid.appendChild(createCardElement(name, file));
-        }
-
-        closeModals();
-        downloadUpdatedIndexHtml();
-      });
-
-      deleteCardBtn.addEventListener("click", function () {
-        if (!activeCardEl) return;
-        activeCardEl.remove();
-        closeModals();
-        downloadUpdatedIndexHtml();
-      });
-    })();
-  </script>
+  renderCards();
+</script>
 </body>
 </html>
