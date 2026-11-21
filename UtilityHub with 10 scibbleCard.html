@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Utility Hub Pro - Card Edition</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #6366f1;
+            --accent: #22d3ee;
+            --text: #f8fafc;
+            --danger: #ef4444;
+            --rupee-gold: #fbbf24;
+            --rupee-silver: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+
+        header span { color: var(--accent); }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .tool-card {
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            padding: 30px;
+            border-radius: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .tool-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .tool-card h3 { margin: 0; font-size: 1.4rem; }
+        .tool-card p { margin: 0; color: #94a3b8; font-size: 0.9rem; }
+
+        .module { display: none; width: 100%; max-width: 800px; margin: 20px auto; }
+        .module.active { display: block; animation: zoomIn 0.3s ease; }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .card { background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: white; font-size: 1rem; }
+        .btn-action { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+
+        /* Abacus Styles */
+        .abacus-frame { position: relative; width: 100%; height: 320px; background-color: #8b4513; border: 12px solid #5d2e0a; border-radius: 15px; display: flex; justify-content: space-around; padding: 10px; }
+        .mid-bar { position: absolute; top: 90px; left: 0; right: 0; height: 14px; background-color: #4a2508; z-index: 1; }
+        .column { position: relative; width: 50px; height: 100%; display: flex; flex-direction: column; align-items: center; }
+        .column::before { content: ''; position: absolute; width: 8px; height: 100%; background: #bdc3c7; }
+        .bead { width: 44px; height: 32px; border-radius: 50%; cursor: pointer; z-index: 2; transition: transform 0.1s; box-shadow: inset -4px -4px 6px rgba(0,0,0,0.5); }
+        .top-bead { background-color: #ff4757; margin-top: 5px; }
+        .top-bead.active { transform: translateY(48px); }
+        .bottom-section { flex-grow: 1; display: flex; flex-direction: column-reverse; width: 100%; padding-top: 30px; }
+        .bottom-bead { background-color: #1e90ff; margin-bottom: 5px; }
+        .bottom-bead.active { transform: translateY(-80px); }
+
+        /* Alphabet Grid */
+        .alphabet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 15px; margin-top: 20px; }
+        .alphabet-card { background: #0f172a; border: 2px solid #334155; border-radius: 15px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-weight: bold; }
+        .alphabet-card:hover { border-color: var(--accent); transform: scale(1.05); background: #1e293b; }
+        .alphabet-card .letter { font-size: 2rem; color: var(--accent); }
+        
+        /* Stopwatch */
+        #stopwatch-display { font-size: 4rem; text-align: center; font-family: monospace; padding: 20px 0; color: var(--accent); }
+        .lap-list { margin-top: 20px; max-height: 200px; overflow-y: auto; background: #0f172a; border-radius: 10px; padding: 10px; list-style: none; }
+        .lap-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #334155; font-family: monospace; }
+
+        /* Decision Maker UI Enhancements */
+        .mode-toggle { display: flex; background: #0f172a; padding: 6px; border-radius: 16px; margin-bottom: 30px; border: 1px solid #334155; width: 100%; max-width: 350px; margin-inline: auto; }
+        .mode-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #94a3b8; cursor: pointer; border-radius: 12px; font-weight: bold; transition: 0.3s; }
+        .mode-btn.active { background: var(--primary); color: white; }
+
+        .coin-big { 
+            background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 50%, #64748b 100%); 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            border: 10px solid #94a3b8; 
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.4); 
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .coin-inner {
+            width: 85%; height: 85%;
+            border-radius: 50%;
+            border: 2px dashed rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #f1f5f9 0%, #cbd5e1 100%);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            color: #334155;
+            font-weight: bold;
+        }
+        .dice-big { 
+            background: #f8fafc; 
+            border-radius: 28px; 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            padding: 12%; 
+            gap: 10%; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5); 
+            transition: transform 0.4s; 
+        }
+        .dot-big { background: #1e293b; border-radius: 50%; width: 100%; height: 0; padding-bottom: 100%; visibility: hidden; }
+        .dot-big.show { visibility: visible; }
+        .spinning { animation: spin3D 0.6s infinite linear; }
+        @keyframes spin3D { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #0f172a; }
+        td { border: 1px solid #334155; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; transition: background 0.3s;}
+
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* NEW SECTION: Scribble Styles */
+        .scribble-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .scribble-info { flex: 1; min-width: 250px; background: #0f172a; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border: 1px solid #334155; }
+        .scribble-canvas-area { flex: 2; min-width: 300px; position: relative; }
+        .scribble-letter-big { font-size: 10rem; color: var(--accent); margin: 0; line-height: 1; }
+        .scribble-word-small { font-size: 2rem; color: #94a3b8; }
+        #canvas-scribble { background: #f8fafc; border-radius: 15px; width: 100%; cursor: crosshair; touch-action: none; border: 4px solid #334155; }
+        .scribble-controls { display: flex; gap: 10px; margin-top: 15px; align-items: center; width: 100%; justify-content: center; }
+        .color-picker { width: 50px; height: 50px; padding: 0; border: none; background: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<canvas id="fwCanvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000;"></canvas>
+
+<div class="container" id="dashboard">
+    <header>
+        <h1>Utility<span>Hub</span> Pro</h1>
+        <p>Your Comprehensive Interactive Dashboard</p>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="tool-card" onclick="openTool('calc')">
+            <div class="tool-icon">🔢</div>
+            <h3>Calculator</h3>
+            <p>Arithmetic operations</p>
+        </div>
+        <div class="tool-card" onclick="openTool('abacus')">
+            <div class="tool-icon">🧮</div>
+            <h3>Abacus Hero</h3>
+            <p>Master the counting tool</p>
+        </div>
+        <div class="tool-card" onclick="openTool('date-age')">
+            <div class="tool-icon">📅</div>
+            <h3>Age Engine</h3>
+            <p>Calculate dates precisely</p>
+        </div>
+        <div class="tool-card" onclick="openTool('conv')">
+            <div class="tool-icon">🔄</div>
+            <h3>Converter</h3>
+            <p>Length, Mass, Area, Volume</p>
+        </div>
+        <div class="tool-card" onclick="openTool('time')">
+            <div class="tool-icon">⏱️</div>
+            <h3>Stopwatch</h3>
+            <p>Timer & Lap tracking</p>
+        </div>
+        <div class="tool-card" onclick="openTool('alphabets')">
+            <div class="tool-icon">🔤</div>
+            <h3>Alphabets</h3>
+            <p>A-Z Learning with Voice</p>
+        </div>
+        <!-- NEW CARD: Scribble -->
+        <div class="tool-card" onclick="openTool('scribble')">
+            <div class="tool-icon">✍️</div>
+            <h3>Scribble A-Z</h3>
+            <p>Trace and Learn Writing</p>
+        </div>
+        <div class="tool-card" onclick="openTool('Nursery')">
+            <div class="tool-icon">🏫</div>
+            <h3>Nursery Table</h3>
+            <p>Multiplication tables</p>
+        </div>
+        <div class="tool-card" onclick="openTool('decide')">
+            <div class="tool-icon">🎲</div>
+            <h3>Decision Maker</h3>
+            <p>Coin flip or Dice roll</p>
+        </div>
+        <div class="tool-card" onclick="openTool('health')">
+            <div class="tool-icon">⚖️</div>
+            <h3>BMI Health</h3>
+            <p>Analyze health metrics</p>
+        </div>
+    </div>
+</div>
+
+<div class="container" id="tool-view" style="display: none;">
+    <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+    
+    <section id="calc" class="module">
+        <div class="card">
+            <h2>Calculator</h2>
+            <div id="scr" style="background:#0f172a; padding:25px; text-align:right; font-size:2.5rem; border-radius:10px; margin-bottom:15px; border:1px solid #334155; height: 80px; display: flex; align-items: center; justify-content: flex-end;">0</div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+                <button class="btn-action" style="background:var(--danger)" onclick="cClr()">C</button>
+                <button class="btn-action" onclick="cIn('/')">÷</button>
+                <button class="btn-action" onclick="cIn('*')">×</button>
+                <button class="btn-action" onclick="cIn('-')">-</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('7')">7</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('8')">8</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('9')">9</button>
+                <button class="btn-action" onclick="cIn('+')">+</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('4')">4</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('5')">5</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('6')">6</button>
+                <button class="btn-action" style="background:var(--accent); color:black;" onclick="cSol()">=</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('1')">1</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('2')">2</button>
+                <button class="btn-action" style="background:#475569" onclick="cIn('3')">3</button>
+                <button class="btn-action" style="background:#475569; grid-column: span 3" onclick="cIn('0')">0</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="abacus" class="module">
+        <div class="card" style="text-align:center">
+            <h2 style="color:var(--accent)">Abacus Hero</h2>
+            <div style="margin-bottom:10px; font-weight:bold;">Stars: <span id="stars">0</span> ⭐</div>
+            <div id="goal-num" style="font-size:2.5rem; margin-bottom:10px;">?</div>
+            <button onclick="startChallenge()" class="btn-action" style="background:var(--rupee-gold); color:black; width: auto; padding: 10px 30px;">New Challenge</button>
+            <div class="abacus-frame" style="margin-top:20px">
+                <div class="mid-bar"></div>
+                <div class="column" data-value="1000"><div style="height:80px"><div class="bead top-bead" onclick="moveBead(this)"></div></div><div class="bottom-section"><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div></div></div>
+                <div class="column" data-value="100"><div style="height:80px"><div class="bead top-bead" onclick="moveBead(this)"></div></div><div class="bottom-section"><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div></div></div>
+                <div class="column" data-value="10"><div style="height:80px"><div class="bead top-bead" onclick="moveBead(this)"></div></div><div class="bottom-section"><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div></div></div>
+                <div class="column" data-value="1"><div style="height:80px"><div class="bead top-bead" onclick="moveBead(this)"></div></div><div class="bottom-section"><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div><div class="bead bottom-bead" onclick="moveBead(this)"></div></div></div>
+            </div>
+            <h3>Total: <span id="total" style="color:var(--accent)">0</span></h3>
+        </div>
+    </section>
+
+    <section id="date-age" class="module">
+        <div class="card">
+            <h2>Age & Date Engine</h2>
+            <label>Start Date</label><input type="date" id="d1">
+            <label>End Date (Optional)</label><input type="date" id="d2">
+            <button class="btn-action" onclick="calcFullDate()">Calculate Difference</button>
+            <div id="dateRes" style="margin-top:20px; font-size:1.2rem; color:var(--accent); text-align:center"></div>
+        </div>
+    </section>
+
+    <section id="conv" class="module">
+        <div class="card">
+            <h2>Master Converter</h2>
+            <select id="convCat" onchange="populateUnits()">
+                <option value="length">Length</option>
+                <option value="mass">Mass / Weight</option>
+                <option value="area">Area</option>
+                <option value="volume">Volume</option>
+            </select>
+            <input type="number" id="convInput" placeholder="Enter value" oninput="performConversion()">
+            <div style="display:flex; gap:10px;">
+                <select id="unitFrom" onchange="performConversion()"></select>
+                <select id="unitTo" onchange="performConversion()"></select>
+            </div>
+            <div id="convOutput" style="margin-top:20px; font-size:1.5rem; font-weight:bold; color:var(--accent); text-align:center">Result: 0</div>
+        </div>
+    </section>
+
+    <section id="time" class="module">
+        <div class="card">
+            <h2>Stopwatch & Laps</h2>
+            <div id="stopwatch-display">00:00:00</div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-action" id="startStopBtn" onclick="toggleTimer()">Start</button>
+                <button class="btn-action" style="background:#475569" onclick="recordLap()">Lap</button>
+                <button class="btn-action" style="background:var(--danger)" onclick="resetTimer()">Reset</button>
+            </div>
+            <ul class="lap-list" id="lapList"></ul>
+        </div>
+    </section>
+
+    <section id="alphabets" class="module">
+        <div class="card">
+            <h2 align="center">Learn Alphabets</h2>
+            <div class="alphabet-grid" id="alphabetGrid"></div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: Scribble A-Z -->
+    <section id="scribble" class="module">
+        <div class="card">
+            <h2 align="center">Scribble & Learn A-Z</h2>
+            <div class="scribble-container">
+                <div class="scribble-info">
+                    <p class="scribble-letter-big" id="scribbleLetter">A</p>
+                    <p class="scribble-word-small" id="scribbleWord">Apple</p>
+                    <button class="btn-action" onclick="randomScribbleLetter()">Next Random Letter</button>
+                </div>
+                <div class="scribble-canvas-area">
+                    <canvas id="canvas-scribble" height="400"></canvas>
+                    <div class="scribble-controls">
+                        <label>Color:</label>
+                        <input type="color" id="penColor" class="color-picker" value="#6366f1">
+                        <button class="btn-action" style="background:var(--danger); width: auto; margin-top: 0;" onclick="clearScribble()">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="Nursery" class="module">
+        <div class="card">
+            <h2 align="center">Nursery Table Generator</h2>
+            <input type="number" id="rowCount" placeholder="Rows">
+            <input type="number" id="colCount" placeholder="Columns">
+            <input type="number" id="StartNo" placeholder="Start Number">
+            <button class="btn-action" onclick="generateTable()">Create Table</button>
+            <div id="Tablecontainer"></div>
+        </div>
+    </section>
+
+    <section id="decide" class="module">
+        <div class="card">
+            <h2 align="center">Decision Maker</h2>
+            <div class="mode-toggle">
+                <button id="btn-coin" class="mode-btn active" onclick="setDecisionView('coin')">Coin</button>
+                <button id="btn-dice" class="mode-btn" onclick="setDecisionView('dice')">Dice</button>
+            </div>
+            <div id="coin-ui" style="display: flex; flex-direction: column; align-items: center; gap: 35px;">
+                <div id="coinVisual" class="coin-big" style="width: 300px; height: 300px; max-width: 85%;">
+                    <div class="coin-inner">
+                        <span id="coin-symbol" style="font-size: 8rem;">🦁</span>
+                        <span id="coin-label" style="font-size: 1.5rem; text-transform: uppercase; letter-spacing: 3px; margin-top: -10px;">Heads</span>
+                    </div>
+                </div>
+                <button class="btn-action" style="width: 80%;" onclick="flipCoin()">FLIP COIN</button>
+            </div>
+            <div id="dice-ui" style="display: none; flex-direction: column; align-items: center; gap: 35px;">
+                <div id="diceVisual" class="dice-big" style="width: 250px; height: 250px; max-width: 85%;">
+                    <div class="dot-big" id="dot-1" style="grid-area: 1/1"></div>
+                    <div class="dot-big" id="dot-2" style="grid-area: 1/3"></div>
+                    <div class="dot-big" id="dot-3" style="grid-area: 2/1"></div>
+                    <div class="dot-big" id="dot-4" style="grid-area: 2/2"></div>
+                    <div class="dot-big" id="dot-5" style="grid-area: 2/3"></div>
+                    <div class="dot-big" id="dot-6" style="grid-area: 3/1"></div>
+                    <div class="dot-big" id="dot-7" style="grid-area: 3/3"></div>
+                </div>
+                <button class="btn-action" style="width: 80%;" onclick="rollDice()">ROLL DICE</button>
+            </div>
+            <p id="decision-text" align="center" style="margin-top:30px; font-size:2.5rem; font-weight:800; color:var(--accent); min-height:3.5rem"></p>
+        </div>
+    </section>
+
+    <section id="health" class="module">
+        <div class="card">
+            <h2>BMI Health Analyzer</h2>
+            <input type="number" id="w" placeholder="Weight (kg)">
+            <input type="number" id="h" placeholder="Height (cm)">
+            <button class="btn-action" onclick="calcBMI()">Analyze</button>
+            <div id="bmiRes" style="margin-top:20px; text-align: center;"></div>
+        </div>
+    </section>
+</div>
+
+<script>
+    function openTool(id) {
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('tool-view').style.display = 'block';
+        document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if (id === 'alphabets') initAlphabets();
+        if (id === 'conv') populateUnits();
+        if (id === 'scribble') initScribble();
+        window.scrollTo(0,0);
+    }
+
+    function goHome() {
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('tool-view').style.display = 'none';
+    }
+
+    function speak(t) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(t);
+        msg.rate = 0.9;
+        window.speechSynthesis.speak(msg);
+    }
+
+    // Calc
+    let cV = "";
+    function cIn(v){ cV+=v; document.getElementById('scr').innerText=cV; }
+    function cClr(){ cV=""; document.getElementById('scr').innerText="0"; }
+    function cSol(){ try { cV = eval(cV.replace(/[^-()\d/*+.]/g, '')).toString(); document.getElementById('scr').innerText = cV; } catch { cClr(); } }
+
+    // Abacus
+    let target = null, stars = 0;
+    function moveBead(b) { b.classList.toggle('active'); updateAbacus(); }
+    function updateAbacus() {
+        let t = 0;
+        document.querySelectorAll('#abacus .column').forEach(c => {
+            const m = parseInt(c.getAttribute('data-value'));
+            let v = 0;
+            c.querySelectorAll('.top-bead.active').forEach(() => v += 5);
+            c.querySelectorAll('.bottom-bead.active').forEach(() => v += 1);
+            t += (v * m);
+        });
+        document.getElementById('total').innerText = t;
+        if(target !== null && t === target) {
+            stars++; document.getElementById('stars').innerText = stars;
+            speak("Correct!"); triggerFireworks(); target = null;
+        }
+    }
+    function startChallenge() {
+        document.querySelectorAll('.bead').forEach(b => b.classList.remove('active'));
+        target = Math.floor(Math.random() * 20) + 1;
+        document.getElementById('goal-num').innerText = target;
+        speak("Show me " + target);
+    }
+
+    // Date
+    function calcFullDate() {
+        let sStr = document.getElementById('d1').value, eStr = document.getElementById('d2').value;
+        if(!sStr) return;
+        let s = new Date(sStr), e = eStr ? new Date(eStr) : new Date();
+        let y = e.getFullYear() - s.getFullYear(), m = e.getMonth() - s.getMonth(), d = e.getDate() - s.getDate();
+        if (d < 0) { m--; d += new Date(e.getFullYear(), e.getMonth(), 0).getDate(); }
+        if (m < 0) { y--; m += 12; }
+        document.getElementById('dateRes').innerHTML = `<b>${y}</b> Y, <b>${m}</b> M, <b>${d}</b> D`;
+    }
+
+    // Converter
+    const unitData = {
+        length: { units: { m: 1, km: 1000, cm: 0.01, ft: 0.3048, in: 0.0254 }, labels: ["Meters", "Kilometers", "Centimeters", "Feet", "Inches"] },
+        mass: { units: { kg: 1, g: 0.001, lb: 0.4535, oz: 0.0283 }, labels: ["Kilograms", "Grams", "Pounds", "Ounces"] },
+        area: { units: { sqm: 1, sqkm: 1000000, sqft: 0.0929, acre: 4046.86 }, labels: ["Sq Meters", "Sq Kilometers", "Sq Feet", "Acres"] },
+        volume: { units: { l: 1, ml: 0.001, gal: 3.785, cum: 1000 }, labels: ["Liters", "Milliliters", "Gallons", "Cubic Meters"] }
+    };
+    function populateUnits() {
+        const cat = document.getElementById('convCat').value, f = document.getElementById('unitFrom'), t = document.getElementById('unitTo');
+        f.innerHTML = ""; t.innerHTML = "";
+        Object.keys(unitData[cat].units).forEach((k, i) => {
+            f.options.add(new Option(unitData[cat].labels[i], k));
+            t.options.add(new Option(unitData[cat].labels[i], k));
+        });
+    }
+    function performConversion() {
+        const cat = document.getElementById('convCat').value, val = parseFloat(document.getElementById('convInput').value);
+        if(isNaN(val)) return;
+        const res = (val * unitData[cat].units[document.getElementById('unitFrom').value]) / unitData[cat].units[document.getElementById('unitTo').value];
+        document.getElementById('convOutput').innerText = `Result: ${res.toFixed(4)}`;
+    }
+
+    // Timer
+    let timerInterval, startTime, elapsedTime = 0, isRunning = false;
+    function toggleTimer() {
+        if (!isRunning) {
+            startTime = Date.now() - elapsedTime;
+            timerInterval = setInterval(() => {
+                elapsedTime = Date.now() - startTime;
+                document.getElementById('stopwatch-display').innerText = formatTime(elapsedTime);
+            }, 10);
+            document.getElementById('startStopBtn').innerText = 'Stop';
+            isRunning = true;
+        } else {
+            clearInterval(timerInterval);
+            document.getElementById('startStopBtn').innerText = 'Start';
+            isRunning = false;
+        }
+    }
+    function formatTime(ms) {
+        let ts = Math.floor(ms / 1000), m = Math.floor(ts / 60), s = ts % 60, cs = Math.floor((ms % 1000) / 10);
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}:${cs.toString().padStart(2, '0')}`;
+    }
+    function recordLap() {
+        const lapList = document.getElementById('lapList'), lapItem = document.createElement('li');
+        lapItem.className = 'lap-item';
+        lapItem.innerHTML = `<span>Lap ${lapList.children.length + 1}</span> <span>${formatTime(elapsedTime)}</span>`;
+        lapList.prepend(lapItem);
+    }
+    function resetTimer() { clearInterval(timerInterval); elapsedTime = 0; isRunning = false; document.getElementById('stopwatch-display').innerText = "00:00:00"; document.getElementById('lapList').innerHTML = ""; }
+
+    // Alphabet
+    const alphabetData = {'A': 'Apple', 'B': 'Ball', 'C': 'Cat', 'D': 'Dog', 'E': 'Elephant', 'F': 'Fish', 'G': 'Grapes', 'H': 'Horse', 'I': 'Ice Cream', 'J': 'Joker', 'K': 'Kite', 'L': 'Lion', 'M': 'Monkey', 'N': 'Nest', 'O': 'Orange', 'P': 'Parrot', 'Q': 'Queen', 'R': 'Rabbit', 'S': 'Sun', 'T': 'Tiger', 'U': 'Umbrella', 'V': 'Van', 'W': 'Watch', 'X': 'Xylophone', 'Y': 'Yak', 'Z': 'Zebra'};
+    function initAlphabets() {
+        const grid = document.getElementById('alphabetGrid');
+        grid.innerHTML = '';
+        for (let l in alphabetData) {
+            const d = document.createElement('div');
+            d.className = 'alphabet-card';
+            d.innerHTML = `<span class="letter">${l}</span>`;
+            d.onclick = () => speak(`${l} for ${alphabetData[l]}`);
+            grid.appendChild(d);
+        }
+    }
+
+    // NEW LOGIC: Scribble A-Z
+    let scribCanvas, scribCtx, isDrawing = false;
+    let currentScribbleChar = 'A';
+
+    function initScribble() {
+        scribCanvas = document.getElementById('canvas-scribble');
+        scribCtx = scribCanvas.getContext('2d');
+        scribCanvas.width = scribCanvas.parentElement.clientWidth;
+        
+        const startDraw = (e) => {
+            isDrawing = true;
+            scribCtx.beginPath();
+            const pos = getMousePos(e);
+            scribCtx.moveTo(pos.x, pos.y);
+        };
+        const drawMove = (e) => {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            scribCtx.lineTo(pos.x, pos.y);
+            scribCtx.strokeStyle = document.getElementById('penColor').value;
+            scribCtx.lineWidth = 12;
+            scribCtx.lineCap = 'round';
+            scribCtx.stroke();
+        };
+        const stopDraw = () => isDrawing = false;
+
+        scribCanvas.addEventListener('mousedown', startDraw);
+        scribCanvas.addEventListener('mousemove', drawMove);
+        window.addEventListener('mouseup', stopDraw);
+        scribCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); });
+        scribCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawMove(e.touches[0]); });
+        scribCanvas.addEventListener('touchend', stopDraw);
+
+        drawGuide();
+    }
+
+    function getMousePos(evt) {
+        const rect = scribCanvas.getBoundingClientRect();
+        return {
+            x: (evt.clientX - rect.left) * (scribCanvas.width / rect.width),
+            y: (evt.clientY - rect.top) * (scribCanvas.height / rect.height)
+        };
+    }
+
+    function drawGuide() {
+        scribCtx.clearRect(0, 0, scribCanvas.width, scribCanvas.height);
+        scribCtx.fillStyle = "#e2e8f0";
+        scribCtx.font = "bold 350px 'Segoe UI'";
+        scribCtx.textAlign = "center";
+        scribCtx.textBaseline = "middle";
+        scribCtx.setLineDash([10, 10]);
+        scribCtx.strokeStyle = "#cbd5e1";
+        scribCtx.lineWidth = 3;
+        scribCtx.strokeText(currentScribbleChar, scribCanvas.width / 2, scribCanvas.height / 2 + 20);
+        scribCtx.setLineDash([]);
+        
+        document.getElementById('scribbleLetter').innerText = currentScribbleChar;
+        document.getElementById('scribbleWord').innerText = alphabetData[currentScribbleChar];
+        speak(`${currentScribbleChar} for ${alphabetData[currentScribbleChar]}`);
+    }
+
+    function clearScribble() {
+        scribCtx.clearRect(0, 0, scribCanvas.width, scribCanvas.height);
+        drawGuide();
+    }
+
+    function randomScribbleLetter() {
+        const keys = Object.keys(alphabetData);
+        currentScribbleChar = keys[Math.floor(Math.random() * keys.length)];
+        clearScribble();
+    }
+
+    // Nursery
+    function generateTable() {
+        let Rw = document.getElementById('rowCount').value, Cl = document.getElementById('colCount').value, Start = document.getElementById('StartNo').value;
+        let MyTable = '<table>';
+        for (let r=0; r<Rw; r++) {
+            MyTable += '<tr>';
+            for (let c=0; c<Cl; c++) {
+                let val = Start*((r+1)*(1+c));
+                MyTable += `<td onclick="highlightCell(this)">${val}</td>`;
+            }
+            MyTable += '</tr>';
+        }
+        document.getElementById('Tablecontainer').innerHTML = MyTable + '</table>';
+    }
+    function highlightCell(cell) {
+        cell.style.backgroundColor = cell.style.backgroundColor === "yellow" ? "red" : "yellow";
+        cell.style.color = cell.style.backgroundColor === "yellow" ? "blue" : "white";
+        speak(cell.innerText);
+    }
+
+    // Decision Maker
+    function setDecisionView(mode) {
+        document.getElementById('coin-ui').style.display = (mode === 'coin') ? 'flex' : 'none';
+        document.getElementById('dice-ui').style.display = (mode === 'dice') ? 'flex' : 'none';
+        document.getElementById('btn-coin').classList.toggle('active', mode === 'coin');
+        document.getElementById('btn-dice').classList.toggle('active', mode === 'dice');
+        document.getElementById('decision-text').innerText = "";
+    }
+
+    function flipCoin() {
+        const visual = document.getElementById('coinVisual'), text = document.getElementById('decision-text'), sym = document.getElementById('coin-symbol'), lbl = document.getElementById('coin-label');
+        visual.classList.add('spinning');
+        text.innerText = "Flipping...";
+        speak("Flipping");
+        setTimeout(() => {
+            visual.classList.remove('spinning');
+            const isHeads = Math.random() < 0.5;
+            if (isHeads) { sym.innerText = "🦁"; lbl.innerText = "Heads"; text.innerText = "HEADS!"; speak("Heads"); } 
+            else { sym.innerText = "1"; lbl.innerText = "Rupee"; text.innerText = "TAILS!"; speak("Tails"); }
+        }, 800);
+    }
+
+    function rollDice() {
+        const visual = document.getElementById('diceVisual'), text = document.getElementById('decision-text');
+        document.querySelectorAll('.dot-big').forEach(d => d.classList.remove('show'));
+        visual.style.transform = "rotate(360deg) scale(1.1)";
+        text.innerText = "Rolling...";
+        speak("Rolling");
+        setTimeout(() => {
+            visual.style.transform = "rotate(0deg) scale(1)";
+            const roll = Math.floor(Math.random() * 6) + 1;
+            const groups = {1:[4], 2:[1,7], 3:[1,4,7], 4:[1,2,6,7], 5:[1,2,4,6,7], 6:[1,2,3,5,6,7]};
+            groups[roll].forEach(id => document.getElementById('dot-'+id).classList.add('show'));
+            text.innerText = "ROLLED " + roll + "!";
+            speak(roll);
+        }, 500);
+    }
+
+    // BMI
+    function calcBMI() {
+        const weight = parseFloat(document.getElementById('w').value);
+        const height = parseFloat(document.getElementById('h').value) / 100;
+        if (weight > 0 && height > 0) {
+            const bmi = (weight / (height * height)).toFixed(1);
+            let cat = "";
+            if (bmi < 18.5) cat = "Underweight";
+            else if (bmi < 25) cat = "Normal weight";
+            else if (bmi < 30) cat = "Overweight";
+            else cat = "Obese";
+            document.getElementById('bmiRes').innerHTML = `<h3 style="color:var(--accent)">BMI: ${bmi}</h3><p>${cat}</p>`;
+            speak(`Your BMI is ${bmi}, which is considered ${cat}`);
+        }
+    }
+
+    // Fireworks
+    const canvas = document.getElementById('fwCanvas'), ctx = canvas.getContext('2d');
+    let particles = [];
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    function triggerFireworks() { for(let i=0; i<40; i++) particles.push({x:canvas.width/2, y:canvas.height/2, vx:(Math.random()-0.5)*12, vy:(Math.random()-0.5)*12, a:1, c:`hsl(${Math.random()*360},100%,50%)`}); }
+    function animate() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        particles = particles.filter(p => p.a > 0);
+        particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.a-=0.02; ctx.globalAlpha=p.a; ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,4,0,7); ctx.fill(); });
+        requestAnimationFrame(animate);
+    }
+    animate();
+</script>
+</body>
+</html>
