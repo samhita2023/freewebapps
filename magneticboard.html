@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Drawing Board</title>
+    <style>
+        body { margin: 0; padding: 10px; font-family: sans-serif; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Updated container for centered preview */
+        #preview-container { width: 100%; max-width: 600px; margin-bottom: 10px; display: flex; flex-direction: column; align-items: center; }
+        #preview-img { max-width: 100%; max-height: 150px; border: 2px dashed #aaa; display: none; margin-top: 10px; }
+        
+        #board { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; width: 100%; max-width: 600px; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .socket { aspect-ratio: 1 / 1; background: #e0e0e0; border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
+        .socket:active { transform: scale(0.9); }
+        
+        #palette { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 20px; padding: 15px; background: #ddd; border-radius: 50px; }
+        .color-bead { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
+        .selected { border-color: #333; transform: scale(1.1); }
+        
+        /* Control styles */
+        #controls { margin: 15px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+       
+    <div id="controls">
+        <label>Socket Spacing: </label>
+        <input type="range" id="spacing-slider" min="2" max="30" value="8">
+    </div>
+
+
+    <div id="preview-container">
+        <input type="file" id="upload" accept="image/*">
+        <img id="preview-img" alt="Preview">
+    </div>
+
+    <div id="board"></div>
+    <div id="palette"></div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const colors = [
+            {name: 'Red', val: '#FF0000'}, {name: 'Green', val: '#00FF00'}, {name: 'Blue', val: '#0000FF'}, 
+            {name: 'Yellow', val: '#FFFF00'}, {name: 'Magenta', val: '#FF00FF'}, {name: 'Cyan', val: '#00FFFF'}, 
+            {name: 'Orange', val: '#FFA500'}, {name: 'Purple', val: '#800080'}, {name: 'Pink', val: '#FFC0CB'}, 
+            {name: 'Brown', val: '#8B4513'}, {name: 'White', val: '#FFFFFF'}, {name: 'Black', val: '#000000'}
+        ];
+        let selected = colors[0];
+
+        const board = document.getElementById('board');
+        const slider = document.getElementById('spacing-slider');
+
+        // Spacing Slider Logic
+        slider.oninput = function() {
+            board.style.gap = this.value + 'px';
+        };
+
+        // Setup Board
+        for (let i = 0; i < 192; i++) {
+            const socket = document.createElement('div');
+            socket.className = 'socket';
+            socket.dataset.filled = "false";
+            
+            socket.onclick = () => {
+                if (socket.dataset.filled === "true") {
+                    socket.style.backgroundColor = '#e0e0e0';
+                    socket.dataset.filled = "false";
+                } else {
+                    socket.style.backgroundColor = selected.val;
+                    socket.dataset.filled = "true";
+                }
+                playClickSound();
+            };
+            board.appendChild(socket);
+        }
+
+        // Setup Palette
+        const palette = document.getElementById('palette');
+        colors.forEach(c => {
+            const bead = document.createElement('div');
+            bead.className = 'color-bead';
+            bead.style.backgroundColor = c.val;
+            bead.onclick = () => {
+                selected = c;
+                speechSynthesis.speak(new SpeechSynthesisUtterance(c.name));
+                document.querySelectorAll('.color-bead').forEach(b => b.classList.remove('selected'));
+                bead.classList.add('selected');
+            };
+            palette.appendChild(bead);
+        });
+
+        function playClickSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type ='square';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.9, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        document.getElementById('upload').onchange = function(e) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = document.getElementById('preview-img');
+                img.src = event.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+    </script>
+</body>
+</html>
