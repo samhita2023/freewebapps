@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Lucky Scratch — Interactive Foil Card</title>
+<style>
+  :root {
+    --bg-1: #0f172a;
+    --bg-2: #1e1b4b;
+    --card-bg: #ffffff;
+    --accent: #f59e0b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background: radial-gradient(circle at top, #1e293b 0%, #090d16 100%);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .header h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .stat-pill {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 4px 12px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-pill strong {
+    color: #fbbf24;
+  }
+
+  /* Category Selector */
+  .categories {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 7px;
+    max-width: 540px;
+    margin-bottom: 16px;
+  }
+
+  .cat-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .cat-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    transform: translateY(-1px);
+  }
+
+  .cat-btn.active {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-color: #fbbf24;
+    color: #0f172a;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  }
+
+  /* Scratch Card Container */
+  .card-wrapper {
+    position: relative;
+    width: 320px;
+    height: 365px;
+    border-radius: 24px;
+    padding: 12px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04));
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.75),
+      inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .card-wrapper.pop {
+    animation: cardPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes cardPop {
+    0% { transform: scale(0.92) rotate(-1.5deg); }
+    60% { transform: scale(1.03) rotate(1deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Underlying Reveal Content */
+  .reveal-layer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 16px 14px;
+    text-align: center;
+    z-index: 1;
+  }
+
+  .reveal-badge {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .reveal-visual {
+    margin: 18px 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 118px;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.14));
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .reveal-emoji {
+    font-size: 5.2rem;
+    line-height: 1.05;
+  }
+
+  .letter-figure-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .big-symbol {
+    font-size: 4.5rem;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .pair-emoji {
+    font-size: 4.2rem;
+    line-height: 1;
+  }
+
+  /* Flag + Continent Map Composite Card */
+  .geo-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+  }
+
+  .geo-flag-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 74px;
+  }
+
+  .geo-flag-emoji {
+    font-size: 3.6rem;
+    line-height: 1;
+  }
+
+  .geo-flag-tag {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.06em;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+
+  .geo-map-box {
+    position: relative;
+    width: 112px;
+    height: 92px;
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .geo-map-tag {
+    position: absolute;
+    bottom: 3px;
+    right: 5px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #ffffff;
+    font-size: 0.56rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+
+  .reveal-layer.revealed .reveal-visual {
+    transform: scale(1.07);
+  }
+
+  .reveal-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+    line-height: 1.18;
+  }
+
+  .reveal-sub {
+    font-size: 0.84rem;
+    color: #475569;
+    font-weight: 600;
+    line-height: 1.3;
+    max-width: 262px;
+  }
+
+  .geo-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .geo-pill {
+    font-size: 0.73rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  .geo-pill.cap {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
+
+  .geo-pill.cont {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+  }
+
+  /* Foil & Particle Canvases */
+  canvas#foilCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    touch-action: none;
+    cursor: none;
+    transition: opacity 0.45s ease;
+  }
+
+  canvas#fxCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* Custom Coin Cursor */
+  .coin-cursor {
+    position: fixed;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 40;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 30% 30%, #fef08a, #eab308 55%, #a16207 100%);
+    border: 2px solid #fef9c3;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), inset 0 0 6px rgba(255, 255, 255, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1.05rem;
+    color: #713f12;
+  }
+
+  /* Controls */
+  .controls {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 320px;
+  }
+
+  .progress-wrap {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    gap: 10px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f59e0b, #fde047);
+    transition: width 0.12s ease-out;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .new-btn {
+    flex: 1;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+    transition: transform 0.15s ease, filter 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .new-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .new-btn:active {
+    transform: translateY(1px);
+  }
+
+  .sound-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #f8fafc;
+    width: 46px;
+    border-radius: 14px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .sound-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>✨ LUCKY SCRATCH ✨</h1>
+    <div class="stats-bar">
+      <div class="stat-pill">Cards Revealed: <strong id="cardCount">0</strong></div>
+      <div class="stat-pill">Foil: <strong id="foilName">24K Gold</strong></div>
+    </div>
+  </div>
+
+  <div class="categories" id="categoryBar">
+    <button class="cat-btn active" data-cat="all">🎲 All Mix</button>
+    <button class="cat-btn" data-cat="letters">🔤 Letters</button>
+    <button class="cat-btn" data-cat="numbers">🔢 Figures</button>
+    <button class="cat-btn" data-cat="shapes">🔷 Shapes</button>
+    <button class="cat-btn" data-cat="animals">🦁 Animals</button>
+    <button class="cat-btn" data-cat="flowers">🌸 Flowers</button>
+    <button class="cat-btn" data-cat="birds">🦜 Birds</button>
+    <button class="cat-btn" data-cat="nature">🏔️ Nature</button>
+    <button class="cat-btn" data-cat="flags">🗺️ Flags & Maps</button>
+    <button class="cat-btn" data-cat="fruits">🍎 Fruits</button>
+    <button class="cat-btn" data-cat="vegetables">🥕 Vegetables</button>
+  </div>
+
+  <div class="card-wrapper" id="cardWrapper">
+    <div class="card-inner">
+      <div class="reveal-layer" id="revealLayer">
+        <span class="reveal-badge" id="itemCategory">ANIMAL</span>
+        <div class="reveal-visual" id="itemVisual">
+          <div class="reveal-emoji">🦁</div>
+        </div>
+        <div class="reveal-title" id="itemTitle">Lion</div>
+        <div class="reveal-sub" id="itemSub">King of the Savanna</div>
+      </div>
+      <canvas id="foilCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="progress-wrap">
+      <span>Scratched</span>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <span id="pctText">0%</span>
+    </div>
+    <div class="btn-row">
+      <button class="new-btn" id="newCardBtn">🔄 Next Scratch Card</button>
+      <button class="sound-btn" id="soundToggle" title="Toggle Sound">🔊</button>
+    </div>
+  </div>
+
+  <div class="coin-cursor" id="coinCursor">₹</div>
+  <canvas id="fxCanvas"></canvas>
+
+<script>
+(() => {
+  // --- CONTINENT SILHOUETTE PATHS + COUNTRY REGION HIGHLIGHT GENERATOR ---
+  const CONTINENT_SHAPES = {
+    "Asia": {
+      basePath: "M12,24 L36,12 L74,10 L106,18 L112,36 L98,52 L88,72 L72,76 L62,62 L48,70 L38,56 L22,58 L12,42 Z",
+      label: "ASIA"
+    },
+    "Europe": {
+      basePath: "M24,66 L20,48 L34,26 L56,14 L82,16 L94,32 L88,58 L72,68 L54,66 L40,72 Z",
+      label: "EUROPE"
+    },
+    "Africa": {
+      basePath: "M28,12 L64,10 L86,28 L94,46 L76,78 L58,86 L46,66 L42,46 L22,42 L18,24 Z",
+      label: "AFRICA"
+    },
+    "North America": {
+      basePath: "M12,16 L54,10 L92,16 L84,38 L66,58 L58,76 L46,74 L36,54 L20,38 Z",
+      label: "N. AMERICA"
+    },
+    "South America": {
+      basePath: "M34,10 L62,14 L88,36 L76,62 L56,86 L44,86 L42,56 L28,34 Z",
+      label: "S. AMERICA"
+    },
+    "Oceania": {
+      basePath: "M20,36 L46,24 L74,28 L84,48 L72,68 L44,66 L22,56 Z M90,68 L104,64 L102,78 L88,80 Z",
+      label: "OCEANIA"
+    }
+  };
+
+  function buildContinentMapSVG(continent, highlightShapeSVG, highlightColor = "#ef4444") {
+    const c = CONTINENT_SHAPES[continent];
+    return `
+      <svg width="110" height="90" viewBox="0 0 120 92">
+        <defs>
+          <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="${highlightColor}" flood-opacity="0.55"/>
+          </filter>
+        </defs>
+        <!-- Subtle lat/long grid -->
+        <line x1="0" y1="30" x2="120" y2="30" stroke="#dbeafe" stroke-width="1"/>
+        <line x1="0" y1="62" x2="120" y2="62" stroke="#dbeafe" stroke-width="1"/>
+        <line x1="40" y1="0" x2="40" y2="92" stroke="#dbeafe" stroke-width="1"/>
+        <line x1="80" y1="0" x2="80" y2="92" stroke="#dbeafe" stroke-width="1"/>
+        <!-- Continent silhouette -->
+        <path d="${c.basePath}" fill="#cbd5e1" stroke="#64748b" stroke-width="2" stroke-linejoin="round"/>
+        <!-- Highlighted country region -->
+        <g filter="url(#glow)">
+          ${highlightShapeSVG}
+        </g>
+      </svg>
+    `;
+  }
+
+  // --- ITEM DATABASE (200+ Items across 10 Categories) ---
+  const ITEMS = {
+    letters: [
+      { symbol: "A", emoji: "🍎", name: "A for Apple", sub: "A is for crunchy red Apple!", speak: "A for Apple!" },
+      { symbol: "B", emoji: "⚽", name: "B for Ball", sub: "B is for bouncy Ball!", speak: "B for Ball!" },
+      { symbol: "C", emoji: "🐱", name: "C for Cat", sub: "C is for cute little Cat!", speak: "C for Cat!" },
+      { symbol: "D", emoji: "🐶", name: "D for Dog", sub: "D is for friendly Dog!", speak: "D for Dog!" },
+      { symbol: "E", emoji: "🐘", name: "E for Elephant", sub: "E is for big grey Elephant!", speak: "E for Elephant!" },
+      { symbol: "F", emoji: "🐟", name: "F for Fish", sub: "F is for swimming Fish!", speak: "F for Fish!" },
+      { symbol: "G", emoji: "🍇", name: "G for Grapes", sub: "G is for sweet purple Grapes!", speak: "G for Grapes!" },
+      { symbol: "H", emoji: "🐴", name: "H for Horse", sub: "H is for fast galloping Horse!", speak: "H for Horse!" },
+      { symbol: "I", emoji: "🍦", name: "I for Ice Cream", sub: "I is for yummy Ice Cream!", speak: "I for Ice Cream!" },
+      { symbol: "J", emoji: "🃏", name: "J for Joker", sub: "J is for jolly Joker!", speak: "J for Joker!" },
+      { symbol: "K", emoji: "🪁", name: "K for Kite", sub: "K is for high-flying Kite!", speak: "K for Kite!" },
+      { symbol: "L", emoji: "🦁", name: "L for Lion", sub: "L is for roaring Lion!", speak: "L for Lion!" },
+      { symbol: "M", emoji: "🐒", name: "M for Monkey", sub: "M is for playful Monkey!", speak: "M for Monkey!" },
+      { symbol: "N", emoji: "🪺", name: "N for Nest", sub: "N is for cozy bird Nest!", speak: "N for Nest!" },
+      { symbol: "O", emoji: "🦉", name: "O for Owl", sub: "O is for wise night Owl!", speak: "O for Owl!" },
+      { symbol: "P", emoji: "🦚", name: "P for Peacock", sub: "P is for colorful Peacock!", speak: "P for Peacock!" },
+      { symbol: "Q", emoji: "👑", name: "Q for Queen", sub: "Q is for royal Queen!", speak: "Q for Queen!" },
+      { symbol: "R", emoji: "🐇", name: "R for Rabbit", sub: "R is for hopping Rabbit!", speak: "R for Rabbit!" },
+      { symbol: "S", emoji: "☀️", name: "S for Sun", sub: "S is for bright shining Sun!", speak: "S for Sun!" },
+      { symbol: "T", emoji: "🐯", name: "T for Tiger", sub: "T is for striped Tiger!", speak: "T for Tiger!" },
+      { symbol: "U", emoji: "☂️", name: "U for Umbrella", sub: "U is for rainy day Umbrella!", speak: "U for Umbrella!" },
+      { symbol: "V", emoji: "🚐", name: "V for Van", sub: "V is for traveling Van!", speak: "V for Van!" },
+      { symbol: "W", emoji: "🐋", name: "W for Whale", sub: "W is for giant blue Whale!", speak: "W for Whale!" },
+      { symbol: "X", emoji: "🎄", name: "X for Xmas Tree", sub: "X is for festive Xmas Tree!", speak: "X for Xmas Tree!" },
+      { symbol: "Y", emoji: "🪀", name: "Y for Yo-Yo", sub: "Y is for spinning Yo-Yo!", speak: "Y for Yo-Yo!" },
+      { symbol: "Z", emoji: "🦓", name: "Z for Zebra", sub: "Z is for striped Zebra!", speak: "Z for Zebra!" }
+    ],
+    numbers: [
+      { symbol: "1", emoji: "☀️", name: "1 — One Sun", sub: "1 bright Sun shines in our sky!", speak: "1! One Sun shines in our sky!" },
+      { symbol: "2", emoji: "👀", name: "2 — Two Eyes", sub: "2! Animals have two eyes!", speak: "2! Animals have two eyes!" },
+      { symbol: "3", emoji: "🚦", name: "3 — Three Lights", sub: "3 colors on a traffic light: Red, Yellow, Green!", speak: "3! Three colors on a traffic light!" },
+      { symbol: "4", emoji: "🐕", name: "4 — Four Legs", sub: "4! Dogs and horses walk on four legs!", speak: "4! Dogs and horses walk on four legs!" },
+      { symbol: "5", emoji: "🖐️", name: "5 — Five Fingers", sub: "5 fingers on one hand!", speak: "5! Five fingers on one hand!" },
+      { symbol: "6", emoji: "🐞", name: "6 — Six Legs", sub: "6! Insects like ladybugs have six legs!", speak: "6! Insects like ladybugs have six legs!" },
+      { symbol: "7", emoji: "🌈", name: "7 — Seven Colors", sub: "7 magical colors in a rainbow!", speak: "7! Seven magical colors in a rainbow!" },
+      { symbol: "8", emoji: "🐙", name: "8 — Eight Arms", sub: "8! An octopus has eight wiggly arms!", speak: "8! An octopus has eight wiggly arms!" },
+      { symbol: "9", emoji: "🪐", name: "9 — Nine Planets", sub: "9! Counting stars and worlds in space!", speak: "9! Nine worlds in space!" },
+      { symbol: "10", emoji: "🙌", name: "10 — Ten Toes", sub: "10 fingers and 10 little toes!", speak: "10! Ten fingers and ten little toes!" },
+      { symbol: "0", emoji: "🥚", name: "0 — Zero", sub: "0 means nothing in the basket yet!", speak: "0! Zero means nothing in the basket yet!" },
+      { symbol: "12", emoji: "🕛", name: "12 — Twelve Hours", sub: "12 numbers around a clock face!", speak: "12! Twelve numbers around a clock face!" }
+    ],
+    shapes: [
+      {
+        name: "Circle",
+        sub: "Round like a wheel or full moon — 0 corners!",
+        speak: "Circle! Round like a wheel with zero corners!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#ef4444" stroke="#991b1b" stroke-width="4"/></svg>`
+      },
+      {
+        name: "Square",
+        sub: "4 equal sides and 4 square corners!",
+        speak: "Square! Four equal sides and four corners!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><rect x="14" y="14" width="72" height="72" rx="6" fill="#3b82f6" stroke="#1e40af" stroke-width="4"/></svg>`
+      },
+      {
+        name: "Triangle",
+        sub: "3 straight sides and 3 sharp corners!",
+        speak: "Triangle! Three straight sides and three corners!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><polygon points="50,12 90,86 10,86" fill="#10b981" stroke="#065f46" stroke-width="4" stroke-linejoin="round"/></svg>`
+      },
+      {
+        name: "Rectangle",
+        sub: "2 long sides and 2 short sides like a door!",
+        speak: "Rectangle! Two long sides and two short sides!",
+        svg: `<svg width="126" height="96" viewBox="0 0 130 90"><rect x="10" y="14" width="110" height="62" rx="5" fill="#f59e0b" stroke="#92400e" stroke-width="4"/></svg>`
+      },
+      {
+        name: "Star",
+        sub: "5 shiny points twinkling in the night sky!",
+        speak: "Star! Five shiny points twinkling in the sky!",
+        svg: `<svg width="112" height="112" viewBox="0 0 100 100"><polygon points="50,8 62,36 93,39 69,59 76,90 50,73 24,90 31,59 7,39 38,36" fill="#eab308" stroke="#854d0e" stroke-width="3.5" stroke-linejoin="round"/></svg>`
+      },
+      {
+        name: "Heart",
+        sub: "Symbol of love and kindness!",
+        speak: "Heart! Symbol of love and kindness!",
+        svg: `<svg width="110" height="110" viewBox="0 0 100 100"><path d="M50 86 C20 66, 8 46, 8 30 C8 17, 18 8, 30 8 C39 8, 46 13, 50 20 C54 13, 61 8, 70 8 C82 8, 92 17, 92 30 C92 46, 80 66, 50 86 Z" fill="#ec4899" stroke="#9d174d" stroke-width="4"/></svg>`
+      },
+      {
+        name: "Oval",
+        sub: "Stretched circle shaped like an egg!",
+        speak: "Oval! Shaped like an egg!",
+        svg: `<svg width="120" height="96" viewBox="0 0 120 90"><ellipse cx="60" cy="45" rx="50" ry="32" fill="#8b5cf6" stroke="#4c1d95" stroke-width="4"/></svg>`
+      },
+      {
+        name: "Diamond",
+        sub: "4 equal slanted sides like a sparkling kite!",
+        speak: "Diamond! Four slanted sides like a kite!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><polygon points="50,8 88,50 50,92 12,50" fill="#06b6d4" stroke="#155e75" stroke-width="4" stroke-linejoin="round"/></svg>`
+      },
+      {
+        name: "Pentagon",
+        sub: "5 straight sides like a little house!",
+        speak: "Pentagon! Five straight sides!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><polygon points="50,10 90,39 75,86 25,86 10,39" fill="#f97316" stroke="#9a3412" stroke-width="4" stroke-linejoin="round"/></svg>`
+      },
+      {
+        name: "Hexagon",
+        sub: "6 sides just like a bee's honeycomb!",
+        speak: "Hexagon! Six sides like a honeycomb!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><polygon points="50,8 87,29 87,71 50,92 13,71 13,29" fill="#eab308" stroke="#713f12" stroke-width="4" stroke-linejoin="round"/></svg>`
+      },
+      {
+        name: "Octagon",
+        sub: "8 sides just like a red STOP sign!",
+        speak: "Octagon! Eight sides like a stop sign!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><polygon points="33,10 67,10 90,33 90,67 67,90 33,90 10,67 10,33" fill="#dc2626" stroke="#7f1d1d" stroke-width="4" stroke-linejoin="round"/></svg>`
+      },
+      {
+        name: "Crescent",
+        sub: "Curved shape like the glowing Moon!",
+        speak: "Crescent! Curved shape like the Moon!",
+        svg: `<svg width="108" height="108" viewBox="0 0 100 100"><path d="M64 12 A38 38 0 1 0 86 74 A30 30 0 1 1 64 12 Z" fill="#facc15" stroke="#a16207" stroke-width="3.5"/></svg>`
+      }
+    ],
+    animals: [
+      { emoji: "🦁", name: "Lion", sub: "King of the Savanna" },
+      { emoji: "🐯", name: "Bengal Tiger", sub: "Striped Jungle Predator" },
+      { emoji: "🐘", name: "African Elephant", sub: "Gentle Giant" },
+      { emoji: "🦒", name: "Giraffe", sub: "Tallest Land Animal" },
+      { emoji: "🦓", name: "Zebra", sub: "Unique Striped Coat" },
+      { emoji: "🐼", name: "Giant Panda", sub: "Bamboo Lover" },
+      { emoji: "🐨", name: "Koala", sub: "Eucalyptus Napper" },
+      { emoji: "🦘", name: "Kangaroo", sub: "Australian Hopper" },
+      { emoji: "🦊", name: "Red Fox", sub: "Clever Woodland Scout" },
+      { emoji: "🐺", name: "Gray Wolf", sub: "Pack Hunter" },
+      { emoji: "🐻‍❄️", name: "Polar Bear", sub: "Arctic Explorer" },
+      { emoji: "🐆", name: "Leopard", sub: "Spotted Stealth" },
+      { emoji: "🦏", name: "Rhinoceros", sub: "Armored Herbivore" },
+      { emoji: "🦛", name: "Hippopotamus", sub: "River Giant" },
+      { emoji: "🦍", name: "Silverback Gorilla", sub: "Mighty Forest Ape" },
+      { emoji: "🦧", name: "Orangutan", sub: "Treetop Acrobat" },
+      { emoji: "🐪", name: "Camel", sub: "Ship of the Desert" },
+      { emoji: "🦙", name: "Llama", sub: "Andean Mountain Trekker" },
+      { emoji: "🦌", name: "Stag Deer", sub: "Woodland Monarch" },
+      { emoji: "🦔", name: "Hedgehog", sub: "Spiky Little Friend" },
+      { emoji: "🦦", name: "Sea Otter", sub: "Playful Wave Floater" },
+      { emoji: "🐬", name: "Bottlenose Dolphin", sub: "Ocean Acrobat" },
+      { emoji: "🐋", name: "Blue Whale", sub: "Largest Creature on Earth" },
+      { emoji: "🐢", name: "Sea Turtle", sub: "Ancient Ocean Voyager" }
+    ],
+    flowers: [
+      { emoji: "🌹", name: "Red Rose", sub: "Classic Symbol of Love" },
+      { emoji: "🌻", name: "Sunflower", sub: "Follows the Sun" },
+      { emoji: "🌷", name: "Spring Tulip", sub: "Vibrant Garden Bloom" },
+      { emoji: "🌸", name: "Cherry Blossom", sub: "Sakura Spring Magic" },
+      { emoji: "🌺", name: "Hibiscus", sub: "Tropical Island Flower" },
+      { emoji: "🪷", name: "Sacred Lotus", sub: "Serenity on the Water" },
+      { emoji: "🌼", name: "Daisy", sub: "Bright Meadow Cheer" },
+      { emoji: "💐", name: "Wildflower Bouquet", sub: "Colorful Garden Mix" },
+      { emoji: "🪻", name: "Lavender Hyacinth", sub: "Fragrant Purple Spike" },
+      { emoji: "🥀", name: "Velvet Rose", sub: "Deep Crimson Petal" },
+      { emoji: "🏵️", name: "Golden Rosette", sub: "Ornamental Blossom" },
+      { emoji: "💮", name: "White Jasmine", sub: "Sweet Evening Scent" },
+      { emoji: "🌿", name: "Fragrant Rosemary", sub: "Aromatic Herb Sprig" },
+      { emoji: "☘️", name: "Three-Leaf Shamrock", sub: "Emerald Meadow Clover" },
+      { emoji: "🍀", name: "Four-Leaf Clover", sub: "Rare Lucky Charm" },
+      { emoji: "🌾", name: "Golden Wheat", sub: "Harvest Field Stalk" },
+      { emoji: "🌵", name: "Desert Blossom", sub: "Resilient Oasis Bloom" },
+      { emoji: "🪴", name: "Potted Orchid", sub: "Exotic Indoor Beauty" },
+      { emoji: "🌱", name: "Fresh Sprout", sub: "New Spring Growth" },
+      { emoji: "🍂", name: "Autumn Maple", sub: "Crisp Crimson Foliage" }
+    ],
+    birds: [
+      { emoji: "🦅", name: "Bald Eagle", sub: "Master of the Skies" },
+      { emoji: "🦉", name: "Barn Owl", sub: "Silent Night Hunter" },
+      { emoji: "🦚", name: "Peacock", sub: "Iridescent Feather Fan" },
+      { emoji: "🦜", name: "Scarlet Macaw", sub: "Tropical Rainforest Talker" },
+      { emoji: "🦩", name: "Pink Flamingo", sub: "Graceful Lagoon Wader" },
+      { emoji: "🦢", name: "Mute Swan", sub: "Elegant Lake Glider" },
+      { emoji: "🐧", name: "Emperor Penguin", sub: "Antarctic Swimmer" },
+      { emoji: "🕊️", name: "White Dove", sub: "Messenger of Peace" },
+      { emoji: "🦆", name: "Mallard Duck", sub: "Emerald-Headed Paddler" },
+      { emoji: "🪿", name: "Wild Goose", sub: "High-Flying Migrator" },
+      { emoji: "🐦", name: "Bluebird", sub: "Cheerful Morning Songster" },
+      { emoji: "🐦‍⬛", name: "Raven", sub: "Clever Shadow Flyer" },
+      { emoji: "🐓", name: "Rooster", sub: "Dawn Herald" },
+      { emoji: "🦃", name: "Wild Turkey", sub: "Woodland Strutter" },
+      { emoji: "🦤", name: "Dodo Bird", sub: "Legendary Island Relic" },
+      { emoji: "🐦‍🔥", name: "Mythic Phoenix", sub: "Reborn from Golden Flame" },
+      { emoji: "🐤", name: "Golden Chick", sub: "Fluffy Spring Hatchling" },
+      { emoji: "🐣", name: "Hatching Robin", sub: "Fresh Out of the Shell" },
+      { emoji: "🐥", name: "Songbird Fledgling", sub: "Ready to Take Flight" },
+      { emoji: "🪶", name: "Kingfisher Plume", sub: "Vibrant River Dart" }
+    ],
+    nature: [
+      { emoji: "🏔️", name: "Snow-Capped Peak", sub: "Majestic Alpine Summit" },
+      { emoji: "🌋", name: "Active Volcano", sub: "Fiery Earth Power" },
+      { emoji: "🏝️", name: "Tropical Island", sub: "Turquoise Lagoon Escape" },
+      { emoji: "🏜️", name: "Sand Dunes", sub: "Endless Golden Desert" },
+      { emoji: "🏞️", name: "National Valley", sub: "Winding River & Pines" },
+      { emoji: "🌅", name: "Ocean Sunrise", sub: "First Light on the Waves" },
+      { emoji: "🌄", name: "Mountain Dawn", sub: "Golden Ridge Glow" },
+      { emoji: "🌌", name: "Milky Way", sub: "Starry Night Cosmos" },
+      { emoji: "🌈", name: "Double Rainbow", sub: "Prism After the Rain" },
+      { emoji: "🌊", name: "Ocean Wave", sub: "Rolling Blue Surf" },
+      { emoji: "🌲", name: "Evergreen Pine", sub: "Ancient Boreal Forest" },
+      { emoji: "🌳", name: "Mighty Oak", sub: "Deep-Rooted Canopy" },
+      { emoji: "🌴", name: "Coconut Palm", sub: "Breezy Coastal Shade" },
+      { emoji: "❄️", name: "Crystal Snowflake", sub: "Unique Ice Geometry" },
+      { emoji: "⚡", name: "Lightning Bolt", sub: "Electric Storm Flash" },
+      { emoji: "🌙", name: "Crescent Moon", sub: "Silver Night Beacon" },
+      { emoji: "☀️", name: "Radiant Sun", sub: "Heart of the Solar System" },
+      { emoji: "☄️", name: "Shooting Comet", sub: "Icy Celestial Traveler" },
+      { emoji: "🪨", name: "Granite Boulder", sub: "Timeless Earth Stone" },
+      { emoji: "🍄", name: "Forest Mushroom", sub: "Woodland Floor Cap" }
+    ],
+    flags: [
+      {
+        emoji: "🇮🇳",
+        name: "India",
+        capital: "New Delhi",
+        continent: "Asia",
+        highlightColor: "#f97316",
+        regionSVG: `<polygon points="48,44 62,44 55,66" fill="#f97316" stroke="#9a3412" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇯🇵",
+        name: "Japan",
+        capital: "Tokyo",
+        continent: "Asia",
+        highlightColor: "#ef4444",
+        regionSVG: `<path d="M98,32 L106,24 L108,34 L100,44 Z" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇰🇷",
+        name: "South Korea",
+        capital: "Seoul",
+        continent: "Asia",
+        highlightColor: "#2563eb",
+        regionSVG: `<ellipse cx="92" cy="38" rx="4.5" ry="6.5" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇨🇳",
+        name: "China",
+        capital: "Beijing",
+        continent: "Asia",
+        highlightColor: "#dc2626",
+        regionSVG: `<polygon points="62,28 88,26 90,46 66,48" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇹🇭",
+        name: "Thailand",
+        capital: "Bangkok",
+        continent: "Asia",
+        highlightColor: "#7c3aed",
+        regionSVG: `<polygon points="68,52 76,52 74,66 68,64" fill="#7c3aed" stroke="#4c1d95" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇸🇦",
+        name: "Saudi Arabia",
+        capital: "Riyadh",
+        continent: "Asia",
+        highlightColor: "#16a34a",
+        regionSVG: `<polygon points="20,42 34,42 36,56 22,56" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇬🇧",
+        name: "United Kingdom",
+        capital: "London",
+        continent: "Europe",
+        highlightColor: "#ef4444",
+        regionSVG: `<ellipse cx="26" cy="44" rx="5.5" ry="9" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇫🇷",
+        name: "France",
+        capital: "Paris",
+        continent: "Europe",
+        highlightColor: "#2563eb",
+        regionSVG: `<polygon points="34,48 48,46 48,58 34,58" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇩🇪",
+        name: "Germany",
+        capital: "Berlin",
+        continent: "Europe",
+        highlightColor: "#eab308",
+        regionSVG: `<polygon points="48,40 60,40 60,52 48,52" fill="#eab308" stroke="#854d0e" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇮🇹",
+        name: "Italy",
+        capital: "Rome",
+        continent: "Europe",
+        highlightColor: "#10b981",
+        regionSVG: `<path d="M50,55 L56,55 L64,70 L58,72 Z" fill="#10b981" stroke="#065f46" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇪🇸",
+        name: "Spain",
+        capital: "Madrid",
+        continent: "Europe",
+        highlightColor: "#f97316",
+        regionSVG: `<polygon points="22,58 36,58 35,70 22,70" fill="#f97316" stroke="#9a3412" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇨🇭",
+        name: "Switzerland",
+        capital: "Bern",
+        continent: "Europe",
+        highlightColor: "#dc2626",
+        regionSVG: `<circle cx="48" cy="53" r="5" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇸🇪",
+        name: "Sweden",
+        capital: "Stockholm",
+        continent: "Europe",
+        highlightColor: "#0284c7",
+        regionSVG: `<polygon points="54,18 64,18 60,38 52,38" fill="#0284c7" stroke="#0c4a6e" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇳🇴",
+        name: "Norway",
+        capital: "Oslo",
+        continent: "Europe",
+        highlightColor: "#e11d48",
+        regionSVG: `<polygon points="44,18 54,16 50,36 42,36" fill="#e11d48" stroke="#881337" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇬🇷",
+        name: "Greece",
+        capital: "Athens",
+        continent: "Europe",
+        highlightColor: "#0ea5e9",
+        regionSVG: `<polygon points="66,60 76,60 74,72 66,70" fill="#0ea5e9" stroke="#0369a1" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇪🇬",
+        name: "Egypt",
+        capital: "Cairo",
+        continent: "Africa",
+        highlightColor: "#f59e0b",
+        regionSVG: `<rect x="64" y="14" width="14" height="13" rx="2" fill="#f59e0b" stroke="#92400e" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇿🇦",
+        name: "South Africa",
+        capital: "Pretoria",
+        continent: "Africa",
+        highlightColor: "#16a34a",
+        regionSVG: `<polygon points="52,72 72,72 64,85 54,84" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇰🇪",
+        name: "Kenya",
+        capital: "Nairobi",
+        continent: "Africa",
+        highlightColor: "#dc2626",
+        regionSVG: `<polygon points="74,40 86,40 84,52 74,50" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇳🇬",
+        name: "Nigeria",
+        capital: "Abuja",
+        continent: "Africa",
+        highlightColor: "#059669",
+        regionSVG: `<rect x="38" y="34" width="13" height="11" rx="2" fill="#059669" stroke="#064e3b" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇺🇸",
+        name: "United States",
+        capital: "Washington, D.C.",
+        continent: "North America",
+        highlightColor: "#2563eb",
+        regionSVG: `<rect x="28" y="34" width="44" height="18" rx="3" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇨🇦",
+        name: "Canada",
+        capital: "Ottawa",
+        continent: "North America",
+        highlightColor: "#ef4444",
+        regionSVG: `<polygon points="20,16 82,16 78,34 26,34" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇲🇽",
+        name: "Mexico",
+        capital: "Mexico City",
+        continent: "North America",
+        highlightColor: "#16a34a",
+        regionSVG: `<polygon points="34,52 54,52 58,68 42,66" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇧🇷",
+        name: "Brazil",
+        capital: "Brasília",
+        continent: "South America",
+        highlightColor: "#16a34a",
+        regionSVG: `<polygon points="46,20 84,34 74,58 48,54" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇦🇷",
+        name: "Argentina",
+        capital: "Buenos Aires",
+        continent: "South America",
+        highlightColor: "#0ea5e9",
+        regionSVG: `<polygon points="48,56 64,58 56,85 46,85" fill="#0ea5e9" stroke="#0369a1" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇦🇺",
+        name: "Australia",
+        capital: "Canberra",
+        continent: "Oceania",
+        highlightColor: "#f97316",
+        regionSVG: `<path d="M22,36 L46,25 L73,29 L82,48 L71,67 L44,65 L23,55 Z" fill="#f97316" stroke="#9a3412" stroke-width="1.5"/>`
+      },
+      {
+        emoji: "🇳🇿",
+        name: "New Zealand",
+        capital: "Wellington",
+        continent: "Oceania",
+        highlightColor: "#2563eb",
+        regionSVG: `<polygon points="89,67 105,63 103,79 87,81" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.5"/>`
+      }
+    ],
+    fruits: [
+      { emoji: "🍎", name: "Red Apple", sub: "Crisp Orchard Favorite" },
+      { emoji: "🍏", name: "Green Apple", sub: "Tart & Refreshing Bite" },
+      { emoji: "🍌", name: "Banana", sub: "Sweet Tropical Energy" },
+      { emoji: "🥭", name: "Mango", sub: "King of Summer Fruits" },
+      { emoji: "🍊", name: "Sweet Orange", sub: "Juicy Citrus Burst" },
+      { emoji: "🍋", name: "Zesty Lemon", sub: "Bright Sunny Tang" },
+      { emoji: "🍋‍🟩", name: "Fresh Lime", sub: "Refreshing Citrus Twist" },
+      { emoji: "🍉", name: "Watermelon", sub: "Cool Summer Slice" },
+      { emoji: "🍇", name: "Purple Grapes", sub: "Sweet Vineyard Cluster" },
+      { emoji: "🍓", name: "Strawberry", sub: "Ruby Garden Berry" },
+      { emoji: "🫐", name: "Blueberries", sub: "Tiny Antioxidant Gems" },
+      { emoji: "🍒", name: "Sweet Cherries", sub: "Twin Ruby Treats" },
+      { emoji: "🍑", name: "Ripe Peach", sub: "Velvety Summer Sweetness" },
+      { emoji: "🍐", name: "Bartlett Pear", sub: "Soft & Juicy Orchard Fruit" },
+      { emoji: "🍍", name: "Pineapple", sub: "Golden Tropical Crown" },
+      { emoji: "🥝", name: "Kiwi Fruit", sub: "Emerald Tangy Slices" },
+      { emoji: "🥥", name: "Coconut", sub: "Island Palm Treasure" },
+      { emoji: "🍈", name: "Honeydew Melon", sub: "Cool Sweet Nectar" },
+      { emoji: "🥑", name: "Avocado", sub: "Creamy Green Superfruit" },
+      { emoji: "🫒", name: "Green Olive", sub: "Mediterranean Grove Gem" }
+    ],
+    vegetables: [
+      { emoji: "🥕", name: "Crunchy Carrot", sub: "Bright Orange Root" },
+      { emoji: "🍅", name: "Ripe Tomato", sub: "Juicy Garden Vine" },
+      { emoji: "🥔", name: "Golden Potato", sub: "Hearty Earth Staple" },
+      { emoji: "🍠", name: "Sweet Potato", sub: "Caramel Roasted Root" },
+      { emoji: "🥦", name: "Broccoli", sub: "Little Green Tree" },
+      { emoji: "🥬", name: "Leafy Greens", sub: "Crisp Garden Lettuce" },
+      { emoji: "🥒", name: "Cool Cucumber", sub: "Refreshing Salad Crunch" },
+      { emoji: "🌽", name: "Sweet Corn", sub: "Golden Cob Kernels" },
+      { emoji: "🫑", name: "Bell Pepper", sub: "Sweet Crunchy Capsicum" },
+      { emoji: "🌶️", name: "Red Chili Pepper", sub: "Fiery Kitchen Spice" },
+      { emoji: "🍆", name: "Purple Eggplant", sub: "Glossy Garden Brinjal" },
+      { emoji: "🧅", name: "Red Onion", sub: "Savory Kitchen Essential" },
+      { emoji: "🧄", name: "Garlic Bulb", sub: "Aromatic Culinary Cloves" },
+      { emoji: "🫛", name: "Green Pea Pod", sub: "Sweet Popping Peas" },
+      { emoji: "🫘", name: "Kidney Beans", sub: "Protein-Rich Legumes" },
+      { emoji: "🎃", name: "Harvest Pumpkin", sub: "Autumn Golden Gourd" },
+      { emoji: "🫚", name: "Fresh Ginger", sub: "Zesty Aromatic Root" },
+      { emoji: "🥗", name: "Garden Salad", sub: "Fresh Veggie Bowl" }
+    ]
+  };
+
+  // --- 8 RANDOM METALLIC FOIL THEMES ---
+  const FOIL_THEMES = [
+    {
+      name: "24K Bullion Gold",
+      stops: ["#b45309", "#f59e0b", "#fef08a", "#d97706", "#78350f"],
+      flakeColors: ["#fef08a", "#f59e0b", "#d97706", "#ffffff"],
+      textColor: "#451a03"
+    },
+    {
+      name: "Sterling Silver",
+      stops: ["#475569", "#cbd5e1", "#f8fafc", "#94a3b8", "#334155"],
+      flakeColors: ["#f8fafc", "#cbd5e1", "#94a3b8", "#ffffff"],
+      textColor: "#0f172a"
+    },
+    {
+      name: "Rose Gold Luxe",
+      stops: ["#9f1239", "#fb7185", "#ffe4e6", "#e11d48", "#881337"],
+      flakeColors: ["#ffe4e6", "#fda4af", "#fb7185", "#ffffff"],
+      textColor: "#4c0519"
+    },
+    {
+      name: "Prism Holographic",
+      stops: ["#ec4899", "#8b5cf6", "#38bdf8", "#34d399", "#facc15"],
+      flakeColors: ["#f472b6", "#60a5fa", "#34d399", "#fde047"],
+      textColor: "#1e1b4b"
+    },
+    {
+      name: "Emerald Foil",
+      stops: ["#065f46", "#10b981", "#a7f3d0", "#059669", "#064e3b"],
+      flakeColors: ["#a7f3d0", "#34d399", "#10b981", "#ffffff"],
+      textColor: "#022c22"
+    },
+    {
+      name: "Cobalt Sapphire",
+      stops: ["#1e3a8a", "#3b82f6", "#bae6fd", "#2563eb", "#172554"],
+      flakeColors: ["#bae6fd", "#60a5fa", "#3b82f6", "#ffffff"],
+      textColor: "#0f172a"
+    },
+    {
+      name: "Royal Amethyst",
+      stops: ["#4c1d95", "#8b5cf6", "#ddd6fe", "#7c3aed", "#2e1065"],
+      flakeColors: ["#ddd6fe", "#a78bfa", "#8b5cf6", "#ffffff"],
+      textColor: "#1e1b4b"
+    },
+    {
+      name: "Burnished Copper",
+      stops: ["#7c2d12", "#ea580c", "#fed7aa", "#c2410c", "#431407"],
+      flakeColors: ["#fed7aa", "#fb923c", "#ea580c", "#ffffff"],
+      textColor: "#270c04"
+    }
+  ];
+
+  // --- STATE ---
+  let currentCategory = "all";
+  let currentFoil = FOIL_THEMES[0];
+  let isDrawing = false;
+  let isRevealed = false;
+  let lastPoint = null;
+  let cardsRevealedCount = 0;
+  let soundEnabled = true;
+  let lastItemName = "";
+  let currentSpeechText = "";
+
+  // --- DOM ELEMENTS ---
+  const foilCanvas = document.getElementById("foilCanvas");
+  const fCtx = foilCanvas.getContext("2d", { willReadFrequently: true });
+  const fxCanvas = document.getElementById("fxCanvas");
+  const fxCtx = fxCanvas.getContext("2d");
+  const cardWrapper = document.getElementById("cardWrapper");
+  const revealLayer = document.getElementById("revealLayer");
+  const coinCursor = document.getElementById("coinCursor");
+  const progressFill = document.getElementById("progressFill");
+  const pctText = document.getElementById("pctText");
+  const cardCountEl = document.getElementById("cardCount");
+  const foilNameEl = document.getElementById("foilName");
+
+  // --- AUDIO ENGINE (Web Audio API) ---
+  let audioCtx = null;
+  let lastScratchSound = 0;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+  }
+
+  function playScratchSound() {
+    if (!soundEnabled) return;
+    const now = performance.now();
+    if (now - lastScratchSound < 45) return;
+    lastScratchSound = now;
+
+    ensureAudio();
+    const duration = 0.045;
+    const bufferSize = audioCtx.sampleRate * duration;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.6));
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 2400 + Math.random() * 1400;
+    filter.Q.value = 1.8;
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start();
+  }
+
+  function playWinFanfare() {
+    if (!soundEnabled) return;
+    ensureAudio();
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((freq, idx) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+
+      gain.gain.setValueAtTime(0.001, audioCtx.currentTime + idx * 0.08);
+      gain.gain.linearRampToValueAtTime(0.14, audioCtx.currentTime + idx * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.08 + 0.35);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + idx * 0.08);
+      osc.stop(audioCtx.currentTime + idx * 0.08 + 0.38);
+    });
+  }
+
+  // --- VOICE SHOUT-OUT ENGINE (Web Speech API) ---
+  function shoutOutSurprise(speechPhrase) {
+    if (!soundEnabled || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(speechPhrase);
+    utterance.rate = 0.98;
+    utterance.pitch = 1.18;
+    utterance.volume = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const preferred =
+      voices.find(v => /en/i.test(v.lang) && /(Google|Samantha|Daniel|Natural|Premium|Female)/i.test(v.name)) ||
+      voices.find(v => /en/i.test(v.lang));
+    if (preferred) utterance.voice = preferred;
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+
+  // --- PARTICLE & CONFETTI SYSTEM ---
+  let particles = [];
+
+  function resizeFxCanvas() {
+    fxCanvas.width = window.innerWidth;
+    fxCanvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeFxCanvas);
+  resizeFxCanvas();
+
+  function spawnScratchParticles(clientX, clientY) {
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.5 + Math.random() * 3.5;
+      const color = currentFoil.flakeColors[Math.floor(Math.random() * currentFoil.flakeColors.length)];
+      particles.push({
+        x: clientX + (Math.random() - 0.5) * 14,
+        y: clientY + (Math.random() - 0.5) * 14,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.2,
+        size: 3 + Math.random() * 4,
+        color,
+        alpha: 1,
+        gravity: 0.16,
+        rotation: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.3,
+        type: "flake"
+      });
+    }
+  }
+
+  function spawnConfettiBurst() {
+    const rect = cardWrapper.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const colors = ["#f59e0b", "#10b981", "#3b82f6", "#ec4899", "#8b5cf6", "#fde047"];
+
+    for (let i = 0; i < 85; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 4 + Math.random() * 9;
+      particles.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 3,
+        size: 6 + Math.random() * 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        alpha: 1,
+        gravity: 0.22,
+        rotation: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.25,
+        type: "confetti"
+      });
+    }
+  }
+
+  function animateParticles() {
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.98;
+      p.rotation += p.vRot;
+      p.alpha -= p.type === "flake" ? 0.032 : 0.014;
+
+      if (p.alpha <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+
+      fxCtx.save();
+      fxCtx.globalAlpha = Math.max(0, p.alpha);
+      fxCtx.translate(p.x, p.y);
+      fxCtx.rotate(p.rotation);
+      fxCtx.fillStyle = p.color;
+      if (p.type === "confetti") {
+        fxCtx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      } else {
+        fxCtx.beginPath();
+        fxCtx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        fxCtx.fill();
+      }
+      fxCtx.restore();
+    }
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+
+  // --- PICK RANDOM ITEM & FOIL ---
+  function pickRandomItem() {
+    let pool = [];
+    if (currentCategory === "all") {
+      Object.entries(ITEMS).forEach(([catKey, list]) => {
+        list.forEach(item => pool.push({ ...item, catKey }));
+      });
+    } else {
+      ITEMS[currentCategory].forEach(item => pool.push({ ...item, catKey: currentCategory }));
+    }
+
+    let chosen = pool[Math.floor(Math.random() * pool.length)];
+    if (pool.length > 1 && chosen.name === lastItemName) {
+      chosen = pool[(pool.indexOf(chosen) + 1) % pool.length];
+    }
+    lastItemName = chosen.name;
+
+    const catLabels = {
+      letters: "🔤 LETTER",
+      numbers: "🔢 FIGURE",
+      shapes: "🔷 SHAPE",
+      animals: "🦁 ANIMAL",
+      flowers: "🌸 FLOWER",
+      birds: "🦜 BIRD",
+      nature: "🏔️ NATURE",
+      flags: "🗺️ COUNTRY & MAP",
+      fruits: "🍎 FRUIT",
+      vegetables: "🥕 VEGETABLE"
+    };
+
+    document.getElementById("itemCategory").textContent = catLabels[chosen.catKey] || "SURPRISE";
+
+    const visualBox = document.getElementById("itemVisual");
+    const subBox = document.getElementById("itemSub");
+
+    if (chosen.catKey === "flags") {
+      const mapSVG = buildContinentMapSVG(chosen.continent, chosen.regionSVG, chosen.highlightColor);
+      const contLabel = CONTINENT_SHAPES[chosen.continent].label;
+      visualBox.innerHTML = `
+        <div class="geo-hero">
+          <div class="geo-flag-box">
+            <span class="geo-flag-emoji">${chosen.emoji}</span>
+            <span class="geo-flag-tag">Flag</span>
+          </div>
+          <div class="geo-map-box">
+            ${mapSVG}
+            <span class="geo-map-tag">${contLabel}</span>
+          </div>
+        </div>
+      `;
+      document.getElementById("itemTitle").textContent = chosen.name;
+      subBox.innerHTML = `
+        <div class="geo-pills">
+          <span class="geo-pill cap">🏛️ Capital: ${chosen.capital}</span>
+          <span class="geo-pill cont">🌍 Continent: ${chosen.continent}</span>
+        </div>
+      `;
+      currentSpeechText = `${chosen.name}! Capital: ${chosen.capital}. Continent: ${chosen.continent}.`;
+    } else {
+      if (chosen.svg) {
+        visualBox.innerHTML = chosen.svg;
+      } else if (chosen.symbol) {
+        visualBox.innerHTML = `<div class="letter-figure-hero"><span class="big-symbol">${chosen.symbol}</span><span class="pair-emoji">${chosen.emoji}</span></div>`;
+      } else {
+        visualBox.innerHTML = `<div class="reveal-emoji">${chosen.emoji}</div>`;
+      }
+      document.getElementById("itemTitle").textContent = chosen.name;
+      subBox.textContent = chosen.sub;
+      currentSpeechText = chosen.speak || (chosen.name + "!");
+    }
+  }
+
+  function pickRandomFoil() {
+    let nextFoil = FOIL_THEMES[Math.floor(Math.random() * FOIL_THEMES.length)];
+    if (nextFoil.name === currentFoil.name) {
+      nextFoil = FOIL_THEMES[(FOIL_THEMES.indexOf(nextFoil) + 1) % FOIL_THEMES.length];
+    }
+    currentFoil = nextFoil;
+    foilNameEl.textContent = currentFoil.name;
+  }
+
+  // --- RENDER METALLIC FOIL TEXTURE ---
+  function renderFoil() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = foilCanvas.getBoundingClientRect();
+    const w = rect.width || 296;
+    const h = rect.height || 341;
+
+    foilCanvas.width = w * dpr;
+    foilCanvas.height = h * dpr;
+    fCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fCtx.globalCompositeOperation = "source-over";
+    foilCanvas.style.opacity = "1";
+
+    // Base diagonal metallic gradient
+    const grad = fCtx.createLinearGradient(0, 0, w, h);
+    const stops = currentFoil.stops;
+    stops.forEach((col, idx) => {
+      grad.addColorStop(idx / (stops.length - 1), col);
+    });
+    fCtx.fillStyle = grad;
+    fCtx.fillRect(0, 0, w, h);
+
+    // Brushed metallic micro-grain lines
+    fCtx.save();
+    fCtx.globalAlpha = 0.08;
+    for (let y = 0; y < h; y += 2) {
+      fCtx.fillStyle = y % 4 === 0 ? "#ffffff" : "#000000";
+      fCtx.fillRect(0, y, w, 1);
+    }
+    fCtx.restore();
+
+    // Security Guilloche Wave Pattern
+    fCtx.save();
+    fCtx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+    fCtx.lineWidth = 1;
+    for (let row = 20; row < h; row += 28) {
+      fCtx.beginPath();
+      for (let x = 0; x <= w; x += 6) {
+        const y = row + Math.sin(x * 0.05 + row) * 6;
+        if (x === 0) fCtx.moveTo(x, y);
+        else fCtx.lineTo(x, y);
+      }
+      fCtx.stroke();
+    }
+    fCtx.restore();
+
+    // Diagonal light sheen
+    const sheen = fCtx.createLinearGradient(0, h * 0.2, w, h * 0.8);
+    sheen.addColorStop(0, "rgba(255,255,255,0)");
+    sheen.addColorStop(0.45, "rgba(255,255,255,0.38)");
+    sheen.addColorStop(0.55, "rgba(255,255,255,0.05)");
+    sheen.addColorStop(1, "rgba(255,255,255,0)");
+    fCtx.fillStyle = sheen;
+    fCtx.fillRect(0, 0, w, h);
+
+    // Embossed Stamp Emblem
+    fCtx.save();
+    fCtx.translate(w / 2, h / 2);
+    fCtx.strokeStyle = currentFoil.textColor;
+    fCtx.globalAlpha = 0.45;
+    fCtx.lineWidth = 2;
+    fCtx.setLineDash([6, 4]);
+    fCtx.beginPath();
+    fCtx.arc(0, 0, 74, 0, Math.PI * 2);
+    fCtx.stroke();
+
+    fCtx.setLineDash([]);
+    fCtx.globalAlpha = 0.72;
+    fCtx.fillStyle = currentFoil.textColor;
+    fCtx.font = "800 18px system-ui, sans-serif";
+    fCtx.textAlign = "center";
+    fCtx.textBaseline = "middle";
+    fCtx.fillText("SCRATCH", 0, -10);
+    fCtx.font = "700 13px system-ui, sans-serif";
+    fCtx.fillText("TO REVEAL", 0, 12);
+    fCtx.restore();
+  }
+
+  // --- SCRATCH MECHANICS ---
+  function getCanvasPos(e) {
+    const rect = foilCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+      clientX,
+      clientY
+    };
+  }
+
+  function scratchAt(pos) {
+    if (isRevealed) return;
+    fCtx.globalCompositeOperation = "destination-out";
+    fCtx.lineCap = "round";
+    fCtx.lineJoin = "round";
+    fCtx.lineWidth = 38;
+
+    fCtx.beginPath();
+    if (lastPoint) {
+      fCtx.moveTo(lastPoint.x, lastPoint.y);
+      fCtx.lineTo(pos.x, pos.y);
+    } else {
+      fCtx.arc(pos.x, pos.y, 19, 0, Math.PI * 2);
+    }
+    fCtx.stroke();
+    lastPoint = pos;
+
+    playScratchSound();
+    spawnScratchParticles(pos.clientX, pos.clientY);
+    checkScratchPercentage();
+  }
+
+  let checkThrottle = 0;
+  function checkScratchPercentage() {
+    const now = performance.now();
+    if (now - checkThrottle < 90 || isRevealed) return;
+    checkThrottle = now;
+
+    const imgData = fCtx.getImageData(0, 0, foilCanvas.width, foilCanvas.height).data;
+    let cleared = 0;
+    const step = 32;
+    let totalSamples = 0;
+
+    for (let i = 3; i < imgData.length; i += step) {
+      totalSamples++;
+      if (imgData[i] < 128) cleared++;
+    }
+
+    const pct = Math.min(100, Math.round((cleared / totalSamples) * 100));
+    progressFill.style.width = `${pct}%`;
+    pctText.textContent = `${pct}%`;
+
+    if (pct >= 58) {
+      triggerFullReveal();
+    }
+  }
+
+  function triggerFullReveal() {
+    if (isRevealed) return;
+    isRevealed = true;
+    progressFill.style.width = "100%";
+    pctText.textContent = "100%";
+
+    foilCanvas.style.opacity = "0";
+    revealLayer.classList.add("revealed");
+
+    cardsRevealedCount++;
+    cardCountEl.textContent = cardsRevealedCount;
+
+    playWinFanfare();
+    shoutOutSurprise(currentSpeechText);
+    spawnConfettiBurst();
+  }
+
+  // --- POINTER & TOUCH EVENTS ---
+  foilCanvas.addEventListener("pointerdown", (e) => {
+    isDrawing = true;
+    lastPoint = null;
+    const pos = getCanvasPos(e);
+    scratchAt(pos);
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse") {
+      const rect = foilCanvas.getBoundingClientRect();
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+      if (inside && !isRevealed) {
+        coinCursor.style.display = "flex";
+        coinCursor.style.left = `${e.clientX}px`;
+        coinCursor.style.top = `${e.clientY}px`;
+      } else {
+        coinCursor.style.display = "none";
+      }
+    }
+
+    if (!isDrawing) return;
+    const pos = getCanvasPos(e);
+    scratchAt(pos);
+  });
+
+  window.addEventListener("pointerup", () => {
+    isDrawing = false;
+    lastPoint = null;
+  });
+
+  // --- NEW CARD & CATEGORY SWITCHING ---
+  function initNewCard() {
+    isRevealed = false;
+    isDrawing = false;
+    lastPoint = null;
+    progressFill.style.width = "0%";
+    pctText.textContent = "0%";
+    revealLayer.classList.remove("revealed");
+
+    pickRandomFoil();
+    pickRandomItem();
+    renderFoil();
+
+    cardWrapper.classList.remove("pop");
+    void cardWrapper.offsetWidth;
+    cardWrapper.classList.add("pop");
+  }
+
+  document.getElementById("newCardBtn").addEventListener("click", initNewCard);
+
+  document.getElementById("soundToggle").addEventListener("click", (e) => {
+    soundEnabled = !soundEnabled;
+    if (!soundEnabled && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    e.currentTarget.textContent = soundEnabled ? "🔊" : "🔇";
+  });
+
+  document.querySelectorAll(".cat-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".cat-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentCategory = btn.dataset.cat;
+      initNewCard();
+    });
+  });
+
+  // Initialize first card
+  initNewCard();
+})();
+</script>
+</body>
+</html>
