@@ -1,6 +1,8 @@
-<html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Free Web Apps</title>
   <style>
     :root {
@@ -152,7 +154,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 170px;
+      min-height: 185px;
       box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
       transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     }
@@ -171,18 +173,20 @@
       margin-bottom: 14px;
     }
 
-    .card-number {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--badge-bg);
-      color: var(--badge-text);
-      font-weight: 800;
-      font-size: 1rem;
+    .card-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+    }
+
+    .card-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
     }
 
     .card-top-right {
@@ -238,6 +242,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 6px;
       width: 100%;
       padding: 9px 12px;
       border-radius: 8px;
@@ -246,7 +251,7 @@
       text-decoration: none;
       font-size: 0.85rem;
       font-weight: 700;
-      transition: background 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease;
     }
 
     .card-link:hover {
@@ -272,7 +277,7 @@
     .modal {
       background: #fff;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       border-radius: 16px;
       padding: 24px;
       box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
@@ -315,6 +320,50 @@
       min-height: 76px;
     }
 
+    .icon-picker {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .icon-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 4px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.15s ease;
+    }
+
+    .icon-option svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .icon-option span {
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+
+    .icon-option:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .icon-option.selected {
+      background: #eff6ff;
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
     .error-msg {
       color: #dc2626;
       font-size: 0.82rem;
@@ -352,7 +401,7 @@
     }
   </style>
 </head>
-<body data-new-gr-c-s-check-loaded="14.1349.0" data-gr-ext-installed="">
+<body>
 
 <div class="container">
   <header class="header">
@@ -372,207 +421,22 @@
     </div>
   </header>
 
-  <main id="cardsGrid" class="grid">
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">1</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #1</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(0)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Kids Utility App</h2>
-          <p class="card-desc">Abacus,Scribble,Age Calculator,Nursery Table</p>
-        </div>
-        <a class="card-link" href="https://samhita2023.github.io/freewebapps/utility.html" target="_blank" rel="noopener">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">2</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #2</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(1)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Scratch Rewards</h2>
-          <p class="card-desc">Fun way to learn things for kids ( flowers,fruits,vegetables,nature,numbers).</p>
-        </div>
-        <a class="card-link" href="https://samhita2023.github.io/freewebapps/rewards.html" target="_blank" rel="noopener">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">3</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #3</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(2)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Age Calculator</h2>
-          <p class="card-desc">Calculate Age or difference between two dates.</p>
-        </div>
-        <a class="card-link" href="https://samhita2023.github.io/freewebapps/Age.html" target="_blank" rel="noopener">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">4</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #4</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(3)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">scribble</h2>
-          <p class="card-desc">scribble and share play with shapes and color add imaage and paint</p>
-        </div>
-        <a class="card-link" href="https://samhita2023.github.io/freewebapps/scribble.html" target="_blank" rel="noopener">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">5</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #5</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(4)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Magnetic Dot Game</h2>
-          <p class="card-desc">Kids' Creative & Pretend Play: Scene-building magnetic sets for younger children,</p>
-        </div>
-        <a class="card-link" href="https://samhita2023.github.io/freewebapps/magneticboard.html" target="_blank" rel="noopener">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">6</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #6</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(5)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Water Bubble Ring</h2>
-          <p class="card-desc">Place rings in jack by pupmbing bubble by button</p>
-        </div>
-        <a class="card-link" href="https://samhita2023.github.io/freewebapps/watering.html" target="_blank" rel="noopener">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">7</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #7</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(6)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Focus Galaxy</h2>
-          <p class="card-desc">App for increasing focus and productivity</p>
-        </div>
-        <a class="card-link" href="https://samhita2023.github.io/freewebapps/focus.html" target="_blank" rel="noopener">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">8</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #8</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(7)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Web App 8</h2>
-          <p class="card-desc">Free browser-based utility #8.</p>
-        </div>
-        <a class="card-link" href="#">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">9</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #9</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(8)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Web App 9</h2>
-          <p class="card-desc">Free browser-based utility #9.</p>
-        </div>
-        <a class="card-link" href="#">
-          Open App
-        </a>
-      </article>
-    
-      <article class="card">
-        <div>
-          <div class="card-top">
-            <span class="card-number">10</span>
-            <div class="card-top-right">
-              <span class="card-tag">App #10</span>
-              <button type="button" class="btn-edit " onclick="openEditModal(9)">
-                Edit
-              </button>
-            </div>
-          </div>
-          <h2 class="card-title">Web App 10</h2>
-          <p class="card-desc">Free browser-based utility #10.</p>
-        </div>
-        <a class="card-link" href="#">
-          Open App
-        </a>
-      </article>
-    </main>
+  <main id="cardsGrid" class="grid"></main>
 </div>
 
 <!-- Admin Password Modal -->
 <div id="adminModal" class="modal-backdrop">
   <div class="modal">
     <h2>Admin Mode Login</h2>
-    <p>Enter password to edit app names and descriptions</p>
+    <p>Enter password to edit app names, icons, and descriptions</p>
     <div class="field">
       <label for="adminPassword">Password</label>
-      <input type="password" id="adminPassword" placeholder="Enter password" onkeydown="if (event.key === 'Enter') verifyAdminPassword();">
+      <input
+        type="password"
+        id="adminPassword"
+        placeholder="Enter password"
+        onkeydown="if (event.key === 'Enter') verifyAdminPassword();"
+      />
     </div>
     <div id="adminError" class="error-msg"></div>
     <div class="modal-actions">
@@ -586,10 +450,18 @@
 <div id="cardModal" class="modal-backdrop">
   <div class="modal">
     <h2 id="cardModalHeading">Add Card #11</h2>
-    <p id="cardModalSub">Configure the app name and description</p>
+    <p id="cardModalSub">Configure the app icon, name, and description</p>
+    <div class="field">
+      <label>App Icon</label>
+      <div id="iconPicker" class="icon-picker"></div>
+    </div>
     <div class="field">
       <label for="appTitle">App Name</label>
-      <input type="text" id="appTitle" placeholder="e.g., PDF Merger Tool">
+      <input type="text" id="appTitle" placeholder="e.g., PDF Merger Tool" oninput="autoSelectIconFromText()" />
+    </div>
+    <div class="field">
+      <label for="appDesc">Short Description</label>
+      <textarea id="appDesc" placeholder="Brief summary of what this web app does..." oninput="autoSelectIconFromText()"></textarea>
     </div>
     <div class="field">
       <label for="appDesc">Short Description</label>
@@ -597,7 +469,7 @@
     </div>
     <div class="field">
       <label for="appUrl">App Link (URL)</label>
-      <input type="url" id="appUrl" placeholder="https://...">
+      <input type="url" id="appUrl" placeholder="https://..." />
     </div>
     <div class="modal-actions">
       <button type="button" class="btn-cancel" onclick="closeCardModal()">Cancel</button>
@@ -606,6 +478,365 @@
   </div>
 </div>
 
+<script>
+  const ADMIN_PASSWORD = "4206";
+  const STORAGE_KEY = "free_web_apps_directory_v3";
 
+  const ICONS = {
+    abacus: {
+      label: "Kids / Abacus",
+      bg: "#eff6ff",
+      color: "#2563eb",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><circle cx="8" cy="9" r="1.5" fill="currentColor"/><circle cx="14" cy="9" r="1.5" fill="currentColor"/><circle cx="10" cy="15" r="1.5" fill="currentColor"/><circle cx="16" cy="15" r="1.5" fill="currentColor"/></svg>`
+    },
+    gift: {
+      label: "Rewards",
+      bg: "#fdf2f8",
+      color: "#db2777",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`
+    },
+    calendar: {
+      label: "Age / Date",
+      bg: "#f0fdf4",
+      color: "#16a34a",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>`
+    },
+    palette: {
+      label: "Scribble",
+      bg: "#fff7ed",
+      color: "#ea580c",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>`
+    },
+    magnet: {
+      label: "Magnet",
+      bg: "#fef2f2",
+      color: "#dc2626",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15-4-4 6.75-6.77a7.79 7.79 0 0 1 11 11L13 22l-4-4 6.39-6.36a2.14 2.14 0 0 0-3-3L6 15"/><path d="m5 8 4 4"/><path d="m12 15 4 4"/></svg>`
+    },
+    droplet: {
+      label: "Water Ring",
+      bg: "#ecfeff",
+      color: "#0891b2",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><circle cx="12" cy="14" r="2.5"/></svg>`
+    },
+    galaxy: {
+      label: "Focus",
+      bg: "#eef2ff",
+      color: "#4f46e5",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-30 12 12)"/><circle cx="18.5" cy="7.5" r="1" fill="currentColor"/></svg>`
+    },
+    wrench: {
+      label: "Utility",
+      bg: "#f1f5f9",
+      color: "#334155",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`
+    },
+    calc: {
+      label: "Calc",
+      bg: "#faf5ff",
+      color: "#9333ea",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>`
+    },
+    gamepad: {
+      label: "Game",
+      bg: "#fefce8",
+      color: "#ca8a04",
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="4"/></svg>`
+    }
+  };
 
-</body><grammarly-desktop-integration data-grammarly-shadow-root="true" style="visibility: visible !important;"></grammarly-desktop-integration></html>
+  const ICON_KEYS = Object.keys(ICONS);
+
+  const defaultCards = [
+    {
+      title: "Kids Utility App",
+      desc: "Abacus, Scribble, Age Calculator, Nursery Table",
+      url: "https://samhita2023.github.io/freewebapps/utility.html",
+      icon: "abacus"
+    },
+    {
+      title: "Scratch Rewards",
+      desc: "Fun way to learn things for kids (flowers, fruits, vegetables, nature, numbers).",
+      url: "https://samhita2023.github.io/freewebapps/rewards.html",
+      icon: "gift"
+    },
+    {
+      title: "Age Calculator",
+      desc: "Calculate Age or difference between two dates.",
+      url: "https://samhita2023.github.io/freewebapps/Age.html",
+      icon: "calendar"
+    },
+    {
+      title: "scribble",
+      desc: "Scribble and share, play with shapes and color, add image and paint",
+      url: "https://samhita2023.github.io/freewebapps/scribble.html",
+      icon: "palette"
+    },
+    {
+      title: "Magnetic Dot Game",
+      desc: "Kids' Creative & Pretend Play: Scene-building magnetic sets for younger children.",
+      url: "https://samhita2023.github.io/freewebapps/magneticboard.html",
+      icon: "magnet"
+    },
+    {
+      title: "Water Bubble Ring",
+      desc: "Place rings in jack by pumping bubble by button",
+      url: "https://samhita2023.github.io/freewebapps/watering.html",
+      icon: "droplet"
+    },
+    {
+      title: "Focus Galaxy",
+      desc: "App for increasing focus and productivity",
+      url: "https://samhita2023.github.io/freewebapps/focus.html",
+      icon: "galaxy"
+    },
+    {
+      title: "Web App 8",
+      desc: "Free browser-based utility #8.",
+      url: "#",
+      icon: "wrench"
+    },
+    {
+      title: "Web App 9",
+      desc: "Free browser-based utility #9.",
+      url: "#",
+      icon: "calc"
+    },
+    {
+      title: "Web App 10",
+      desc: "Free browser-based utility #10.",
+      url: "#",
+      icon: "gamepad"
+    }
+  ];
+
+  let isAdmin = false;
+  let editingIndex = null;
+  let selectedIcon = "wrench";
+  let userPickedIcon = false;
+  let cards = [];
+
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    cards = saved ? JSON.parse(saved) : defaultCards;
+    if (!Array.isArray(cards) || cards.length === 0) cards = defaultCards;
+    cards = cards.map((c, idx) => ({
+      ...c,
+      icon: c.icon && ICONS[c.icon] ? c.icon : detectIconFromText(`${c.title} ${c.desc}`, idx)
+    }));
+  } catch (e) {
+    cards = defaultCards;
+  }
+
+  function detectIconFromText(text, fallbackIndex = 0) {
+    const t = String(text || "").toLowerCase();
+    if (t.includes("abacus") || t.includes("nursery")) return "abacus";
+    if (t.includes("scratch") || t.includes("reward")) return "gift";
+    if (t.includes("age") || t.includes("date") || t.includes("calendar")) return "calendar";
+    if (t.includes("scribble") || t.includes("paint") || t.includes("color")) return "palette";
+    if (t.includes("magnet")) return "magnet";
+    if (t.includes("water") || t.includes("bubble") || t.includes("ring")) return "droplet";
+    if (t.includes("focus") || t.includes("galaxy") || t.includes("productivity")) return "galaxy";
+    if (t.includes("calc") || t.includes("math")) return "calc";
+    if (t.includes("game") || t.includes("play")) return "gamepad";
+    return ICON_KEYS[fallbackIndex % ICON_KEYS.length];
+  }
+
+  function persistCards() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    } catch (e) {}
+  }
+
+  function renderCards() {
+    const grid = document.getElementById("cardsGrid");
+    grid.innerHTML = cards.map((card, i) => {
+      const iconKey = card.icon && ICONS[card.icon] ? card.icon : detectIconFromText(`${card.title} ${card.desc}`, i);
+      const iconData = ICONS[iconKey];
+      return `
+        <article class="card">
+          <div>
+            <div class="card-top">
+              <span
+                class="card-icon"
+                style="background: ${iconData.bg}; color: ${iconData.color};"
+                title="${iconData.label}"
+              >
+                ${iconData.svg}
+              </span>
+              <div class="card-top-right">
+                <span class="card-tag">App #${i + 1}</span>
+                <button
+                  type="button"
+                  class="btn-edit ${isAdmin ? "visible" : ""}"
+                  onclick="openEditModal(${i})"
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+            <h2 class="card-title">${escapeHtml(card.title)}</h2>
+            <p class="card-desc">${escapeHtml(card.desc)}</p>
+          </div>
+          <a
+            class="card-link"
+            href="${escapeHtml(card.url || "#")}"
+            ${card.url && card.url !== "#" ? 'target="_blank" rel="noopener"' : ""}
+          >
+            Open App
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 17 17 7"/><path d="M7 7h10v10"/>
+            </svg>
+          </a>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderIconPicker() {
+    const picker = document.getElementById("iconPicker");
+    picker.innerHTML = ICON_KEYS.map((key) => {
+      const item = ICONS[key];
+      const isSelected = key === selectedIcon;
+      return `
+        <button
+          type="button"
+          class="icon-option ${isSelected ? "selected" : ""}"
+          onclick="selectIcon('${key}')"
+        >
+          ${item.svg}
+          <span>${item.label}</span>
+        </button>
+      `;
+    }).join("");
+  }
+
+  function selectIcon(key) {
+    selectedIcon = key;
+    userPickedIcon = true;
+    renderIconPicker();
+  }
+
+  function autoSelectIconFromText() {
+    if (userPickedIcon) return;
+    const title = document.getElementById("appTitle").value;
+    const desc = document.getElementById("appDesc").value;
+    selectedIcon = detectIconFromText(`${title} ${desc}`, cards.length);
+    renderIconPicker();
+  }
+
+  function updateAdminUI() {
+    const btn = document.getElementById("adminToggleBtn");
+    const badge = document.getElementById("adminBadge");
+    btn.textContent = isAdmin ? "Lock Admin" : "Admin Mode";
+    btn.classList.toggle("unlocked", isAdmin);
+    badge.classList.toggle("active", isAdmin);
+    renderCards();
+  }
+
+  function handleAdminButton() {
+    if (isAdmin) {
+      isAdmin = false;
+      updateAdminUI();
+      return;
+    }
+    document.getElementById("adminPassword").value = "";
+    document.getElementById("adminError").textContent = "";
+    document.getElementById("adminModal").classList.add("open");
+    setTimeout(() => document.getElementById("adminPassword").focus(), 40);
+  }
+
+  function closeAdminModal() {
+    document.getElementById("adminModal").classList.remove("open");
+  }
+
+  function verifyAdminPassword() {
+    const entered = document.getElementById("adminPassword").value;
+    if (entered === ADMIN_PASSWORD) {
+      isAdmin = true;
+      closeAdminModal();
+      updateAdminUI();
+    } else {
+      document.getElementById("adminError").textContent = "Incorrect password.";
+    }
+  }
+
+  function openAddModal() {
+    editingIndex = null;
+    userPickedIcon = false;
+    const nextNum = cards.length + 1;
+    selectedIcon = ICON_KEYS[(nextNum - 1) % ICON_KEYS.length];
+    renderIconPicker();
+    document.getElementById("cardModalHeading").textContent = `Add Card #${nextNum}`;
+    document.getElementById("cardModalSub").textContent = "Add a new web app card to the directory";
+    document.getElementById("appTitle").value = "";
+    document.getElementById("appDesc").value = "";
+    document.getElementById("appUrl").value = "";
+    document.getElementById("cardModal").classList.add("open");
+    setTimeout(() => document.getElementById("appTitle").focus(), 40);
+  }
+
+  function openEditModal(index) {
+    if (!isAdmin) return;
+    editingIndex = index;
+    userPickedIcon = true;
+    const current = cards[index];
+    selectedIcon = current.icon && ICONS[current.icon]
+      ? current.icon
+      : detectIconFromText(`${current.title} ${current.desc}`, index);
+    renderIconPicker();
+    document.getElementById("cardModalHeading").textContent = `Edit Card #${index + 1}`;
+    document.getElementById("cardModalSub").textContent = "Update the app icon, name, description, or URL";
+    document.getElementById("appTitle").value = current.title || "";
+    document.getElementById("appDesc").value = current.desc || "";
+    document.getElementById("appUrl").value = current.url && current.url !== "#" ? current.url : "";
+    document.getElementById("cardModal").classList.add("open");
+    setTimeout(() => document.getElementById("appTitle").focus(), 40);
+  }
+
+  function closeCardModal() {
+    editingIndex = null;
+    document.getElementById("cardModal").classList.remove("open");
+  }
+
+  function saveCardModal() {
+    const titleInput = document.getElementById("appTitle").value.trim();
+    const descInput = document.getElementById("appDesc").value.trim();
+    const urlInput = document.getElementById("appUrl").value.trim() || "#";
+
+    if (editingIndex !== null) {
+      const fallbackTitle = `Web App ${editingIndex + 1}`;
+      const fallbackDesc = `Free browser-based utility #${editingIndex + 1}.`;
+      cards[editingIndex] = {
+        title: titleInput || fallbackTitle,
+        desc: descInput || fallbackDesc,
+        url: urlInput,
+        icon: selectedIcon
+      };
+    } else {
+      const nextNum = cards.length + 1;
+      cards.push({
+        title: titleInput || `Web App ${nextNum}`,
+        desc: descInput || `Free browser-based utility #${nextNum}.`,
+        url: urlInput,
+        icon: selectedIcon
+      });
+    }
+
+    persistCards();
+    renderCards();
+    closeCardModal();
+  }
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  renderCards();
+</script>
+</body>
+</html>
