@@ -16,6 +16,7 @@
             --success: #10b981;
         }
 
+        /* Fixed wildcard selector typo */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -52,6 +53,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            gap: 10px;
         }
 
         h1 {
@@ -144,15 +146,17 @@
         /* Controls */
         .controls {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
         }
 
         .btn {
             flex: 1;
+            min-width: 130px;
             padding: 14px;
             border: none;
             border-radius: 12px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 700;
             cursor: pointer;
             display: flex;
@@ -163,6 +167,21 @@
 
         .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px var(--accent-glow); }
         .btn-primary:hover { filter: brightness(1.1); }
+
+        .btn-sound {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.35);
+        }
+        .btn-sound:hover {
+            background: rgba(99, 102, 241, 0.25);
+        }
+        .btn-sound.active {
+            background: rgba(16, 185, 129, 0.18);
+            color: #6ee7b7;
+            border-color: rgba(16, 185, 129, 0.45);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
         
         .btn-warning { background: #374151; color: var(--text); }
         .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
@@ -224,13 +243,12 @@
                 </select>
             </div>
             <div class="timer-display" id="timerDisplay">25:00</div>
-            <div class="timer-status" id="timerStatus" >Ready to Launch</div>
+            <div class="timer-status" id="timerStatus">Ready to Launch</div>
         </div>
 
         <!-- Action Controls -->
         <div class="controls" id="controlGroup">
-        <audio id="fountain" src="fountain.mp3" loop></audio>
-        <button class="btn btn-primary" onclick="let a=document.getElementById('fountain'); if(a.paused){a.play();this.textContent='Stop Sound';}else {a.pause(); a.currentTime=0; this.textContent='Play Sound';}">Play Sound</button>
+            <button class="btn btn-sound" id="soundToggleBtn" onclick="toggleGalaxySound()">🌌 Play Sound</button>
             <button class="btn btn-primary" id="startBtn" onclick="startSession()">🚀 Launch Mission</button>
             <button class="btn btn-warning hidden" id="pauseBtn" onclick="pauseSession()">⏸ Pause</button>
             <button class="btn btn-danger hidden" id="stopBtn" onclick="abortSession()">⚠️ Abandon</button>
@@ -249,7 +267,7 @@
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="sumObject" style="color: var(--success);">+1 Planet</span>
-                        <span class="stat-label">Galaxy Add</span>
+                        <span class="stat-label" id="sumColorBadge" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-top: 2px;">Galaxy Add</span>
                     </div>
                 </div>
             </div>
@@ -258,6 +276,195 @@
     </div>
 
     <script>
+        /* ==========================================================================
+           WEB AUDIO API PROCEDURAL GALAXY AMBIENT SYNTHESIZER
+           Generates deep space drone, filtered solar wind, and celestial chimes
+           ========================================================================== */
+        class GalaxySoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.isPlaying = false;
+                this.nodes = [];
+                this.shimmerInterval = null;
+                this.stopTimeout = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            start() {
+                if (this.isPlaying) return;
+                this.init();
+
+                if (this.stopTimeout) {
+                    clearTimeout(this.stopTimeout);
+                    this.stopTimeout = null;
+                }
+
+                const now = this.ctx.currentTime;
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.setValueAtTime(0.0001, now);
+                this.masterGain.gain.exponentialRampToValueAtTime(0.35, now + 2.0);
+                this.masterGain.connect(this.ctx.destination);
+
+                // 1. Deep Cosmic Sub-Bass & Warm Fifth Drone (C2 & G2 with subtle detune)
+                const droneFreqs = [65.41, 65.85, 98.00, 130.81];
+                droneFreqs.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const oscGain = this.ctx.createGain();
+                    const filter = this.ctx.createBiquadFilter();
+
+                    osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(220, now);
+
+                    oscGain.gain.setValueAtTime(idx === 0 ? 0.35 : 0.14, now);
+
+                    osc.connect(filter);
+                    filter.connect(oscGain);
+                    oscGain.connect(this.masterGain);
+
+                    osc.start(now);
+                    this.nodes.push(osc);
+                });
+
+                // 2. Filtered Brown Noise ("Solar Wind / Nebula Drift")
+                const bufferSize = 2 * this.ctx.sampleRate;
+                const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                let lastOut = 0.0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    output[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = output[i];
+                    output[i] *= 3.0; // Gain compensation
+                }
+
+                const whiteNoise = this.ctx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+                whiteNoise.loop = true;
+
+                const windFilter = this.ctx.createBiquadFilter();
+                windFilter.type = 'bandpass';
+                windFilter.frequency.setValueAtTime(280, now);
+                windFilter.Q.setValueAtTime(2.5, now);
+
+                // Slow LFO modulating the nebula filter frequency
+                const lfo = this.ctx.createOscillator();
+                const lfoGain = this.ctx.createGain();
+                lfo.frequency.setValueAtTime(0.08, now); // 1 cycle every ~12.5s
+                lfoGain.gain.setValueAtTime(140, now);
+                lfo.connect(lfoGain);
+                lfoGain.connect(windFilter.frequency);
+
+                const windGain = this.ctx.createGain();
+                windGain.gain.setValueAtTime(0.16, now);
+
+                whiteNoise.connect(windFilter);
+                windFilter.connect(windGain);
+                windGain.connect(this.masterGain);
+
+                whiteNoise.start(now);
+                lfo.start(now);
+                this.nodes.push(whiteNoise, lfo);
+
+                // 3. Gentle Celestial Harmonic Shimmer / Starlight Chimes
+                const pentatonicSpaceNotes = [261.63, 311.13, 392.00, 466.16, 523.25, 622.25, 783.99];
+                const triggerChime = () => {
+                    if (!this.isPlaying || !this.ctx) return;
+                    const t = this.ctx.currentTime;
+                    const note = pentatonicSpaceNotes[Math.floor(Math.random() * pentatonicSpaceNotes.length)];
+
+                    const chimeOsc = this.ctx.createOscillator();
+                    const chimeGain = this.ctx.createGain();
+
+                    chimeOsc.type = 'sine';
+                    chimeOsc.frequency.setValueAtTime(note, t);
+
+                    chimeGain.gain.setValueAtTime(0.0001, t);
+                    chimeGain.gain.exponentialRampToValueAtTime(0.045, t + 1.2);
+                    chimeGain.gain.exponentialRampToValueAtTime(0.0001, t + 5.5);
+
+                    chimeOsc.connect(chimeGain);
+                    chimeGain.connect(this.masterGain);
+
+                    chimeOsc.start(t);
+                    chimeOsc.stop(t + 5.6);
+                };
+
+                // Trigger initial shimmer shortly after start, then periodically
+                setTimeout(triggerChime, 800);
+                this.shimmerInterval = setInterval(triggerChime, 4200);
+
+                this.isPlaying = true;
+            }
+
+            stop() {
+                if (!this.isPlaying || !this.ctx) return;
+                this.isPlaying = false;
+
+                if (this.shimmerInterval) {
+                    clearInterval(this.shimmerInterval);
+                    this.shimmerInterval = null;
+                }
+
+                const now = this.ctx.currentTime;
+                if (this.masterGain) {
+                    this.masterGain.gain.cancelScheduledValues(now);
+                    this.masterGain.gain.setValueAtTime(Math.max(this.masterGain.gain.value, 0.0001), now);
+                    this.masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+                }
+
+                const activeNodes = [...this.nodes];
+                this.nodes = [];
+
+                this.stopTimeout = setTimeout(() => {
+                    activeNodes.forEach(node => {
+                        try {
+                            node.stop();
+                            node.disconnect();
+                        } catch (e) {}
+                    });
+                }, 850);
+            }
+
+            toggle() {
+                if (this.isPlaying) {
+                    this.stop();
+                } else {
+                    this.start();
+                }
+                return this.isPlaying;
+            }
+        }
+
+        const galaxyAudio = new GalaxySoundEngine();
+
+        function toggleGalaxySound() {
+            const btn = document.getElementById('soundToggleBtn');
+            const playing = galaxyAudio.toggle();
+            if (playing) {
+                btn.textContent = '🔊 Stop Sound';
+                btn.classList.add('active');
+            } else {
+                btn.textContent = '🌌 Play Sound';
+                btn.classList.remove('active');
+            }
+        }
+
+        /* ==========================================================================
+           TIMER & GALAXY ORBIT LOGIC
+           ========================================================================== */
         let selectedMinutes = 25;
         let timeLeft = selectedMinutes * 60;
         let timerId = null;
@@ -267,6 +474,71 @@
         let pauseStart = null;
 
         let cosmicObjects = [];
+
+        const PLANET_PALETTE = [
+            '#38bdf8', // Sky Cyan
+            '#34d399', // Emerald
+            '#f472b6', // Nebula Pink
+            '#fbbf24', // Solar Amber
+            '#a78bfa', // Violet
+            '#fb7185', // Coral
+            '#2dd4bf', // Teal
+            '#fb923c', // Orange
+            '#a3e635', // Lime
+            '#818cf8', // Indigo
+            '#facc15', // Gold
+            '#e879f9'  // Rose
+        ];
+
+        const DEBRIS_PALETTE = [
+            '#64748b', // Slate
+            '#4b5563', // Charcoal
+            '#78350f', // Rust
+            '#78716c', // Dusty Taupe
+            '#475569', // Steel
+            '#71717a', // Ash
+            '#854d0e', // Bronze
+            '#52525b', // Iron
+            '#57534e', // Umber
+            '#6b7280'  // Pewter
+        ];
+
+        function getDistinctCosmicColor(type) {
+            const usedColors = new Set(cosmicObjects.map(obj => obj.color.toLowerCase()));
+            const palette = type === 'planet' ? PLANET_PALETTE : DEBRIS_PALETTE;
+            const available = palette.filter(c => !usedColors.has(c.toLowerCase()));
+
+            if (available.length > 0) {
+                return available[Math.floor(Math.random() * available.length)];
+            }
+
+            // Golden-angle fallback ensures every additional object gets a visually distinct hue
+            let step = cosmicObjects.length;
+            let candidate = '';
+            do {
+                const hue = Math.round((step * 137.508) % 360);
+                if (type === 'planet') {
+                    const sat = 75 + (step % 3) * 5; // 75% - 85%
+                    const light = 60 + (step % 3) * 5; // 60% - 70%
+                    candidate = `hsl(${hue}, ${sat}%, ${light}%)`;
+                } else {
+                    const sat = 15 + (step % 4) * 5; // 15% - 30%
+                    const light = 35 + (step % 4) * 5; // 35% - 50%
+                    candidate = `hsl(${hue}, ${sat}%, ${light}%)`;
+                }
+                step++;
+            } while (usedColors.has(candidate.toLowerCase()));
+
+            return candidate;
+        }
+
+        // Ambient background stars for visual depth
+        const bgStars = Array.from({ length: 45 }, () => ({
+            x: Math.random(),
+            y: Math.random(),
+            r: Math.random() * 1.3 + 0.3,
+            alpha: Math.random() * 0.6 + 0.2
+        }));
 
         const canvas = document.getElementById('galaxyCanvas');
         const ctx = canvas.getContext('2d');
@@ -288,14 +560,25 @@
 
         function drawGalaxy() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Subtle twinkling starfield
+            bgStars.forEach(s => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+                ctx.beginPath();
+                ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            ctx.shadowBlur = 15;
+            // Central Star Core (pulses gently when sound is active)
+            const pulse = galaxyAudio.isPlaying ? Math.sin(Date.now() * 0.003) * 2.5 : 0;
+            ctx.shadowBlur = 15 + pulse * 2;
             ctx.shadowColor = '#6366f1';
             ctx.fillStyle = '#818cf8';
             ctx.beginPath();
-            ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+            ctx.arc(cx, cy, 10 + pulse * 0.4, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
 
@@ -304,7 +587,7 @@
                 const x = cx + Math.cos(obj.angle) * obj.orbitRadius;
                 const y = cy + Math.sin(obj.angle) * obj.orbitRadius;
 
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.arc(cx, cy, obj.orbitRadius, 0, Math.PI * 2);
@@ -380,46 +663,46 @@
         }
 
         function completeMission(success) {
-            const now = new Date();
-            const elapsedMs = now - sessionStartTime - totalPausedTime;
-            const elapsedMin = Math.max(1, Math.round(elapsedMs / 60000));
-
             const radiusStep = 25 + (cosmicObjects.length * 14);
+            const sumColorBadge = document.getElementById('sumColorBadge');
 
             if (success) {
-                // Planet size scales dynamically based on the goal time duration! (e.g. 15m = smaller, 60m = larger planet)
-                const calculatedSize = 3 + (selectedMinutes / 12); 
+                const calculatedSize = 3 + (selectedMinutes / 12);
+                const planetColor = getDistinctCosmicColor('planet');
 
                 cosmicObjects.push({
                     orbitRadius: Math.min(radiusStep, 95),
                     angle: Math.random() * Math.PI * 2,
                     speed: 0.01 + (Math.random() * 0.01),
                     size: calculatedSize,
-                    color: ['#38bdf8', '#34d399', '#f472b6', '#fbbf24'][Math.floor(Math.random() * 4)],
+                    color: planetColor,
                     type: 'planet'
                 });
 
                 document.getElementById('sumTitle').textContent = "Planet Forged Successfully!";
-                document.getElementById('sumDesc',).textContent = `Added a size-${Math.round(calculatedSize)} celestial body for your ${selectedMinutes}m session.`;
+                document.getElementById('sumDesc').textContent = `Added a size-${Math.round(calculatedSize)} celestial body for your ${selectedMinutes}m session.`;
                 document.getElementById('sumObject').textContent = "+1 Planet";
-                document.getElementById('sumObject').style.color = "var(--success)";
+                document.getElementById('sumObject').style.color = planetColor;
+                sumColorBadge.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${planetColor};box-shadow:0 0 8px ${planetColor};"></span> Unique Signature`;
             } else {
+                const debrisColor = getDistinctCosmicColor('debris');
+
                 cosmicObjects.push({
                     orbitRadius: Math.min(radiusStep, 95),
                     angle: Math.random() * Math.PI * 2,
                     speed: 0.005,
                     size: 2,
-                    color: '#4b5563',
+                    color: debrisColor,
                     type: 'debris'
                 });
 
                 document.getElementById('sumTitle').textContent = "Mission Aborted";
                 document.getElementById('sumDesc').textContent = "Space debris added to system due to early termination.";
                 document.getElementById('sumObject').textContent = "+1 Debris";
-                document.getElementById('sumObject').style.color = "var(--danger)";
+                document.getElementById('sumObject').style.color = debrisColor;
+                sumColorBadge.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${debrisColor};"></span> Debris Signature`;
             }
 
-            // Calculate overall stats & performance percentage
             const planetsCount = cosmicObjects.filter(o => o.type === 'planet').length;
             const debrisCount = cosmicObjects.filter(o => o.type === 'debris').length;
             const totalMissions = cosmicObjects.length;
