@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Freeform Studio — Digital Paper Canvas</title>
+  
+  <!-- Google Fonts: Inter, Playfair Display, JetBrains Mono, Caveat (Handwriting) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- html2canvas & jsPDF for High-Res Image and Vector/Raster PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-hand: 'Caveat', cursive;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #f2f2f7;
+      color: #1c1c1e;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Frosted Glass Apple-style Floating Surfaces */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Workspace Canvas Background */
+    #workspace {
+      background-color: #e5e5ea;
+      background-image: radial-gradient(#c7c7cc 1px, transparent 1px);
+      background-size: 24px 24px;
+      touch-action: none;
+    }
+
+    /* Paper Sheet Patterns */
+    .paper-blank {
+      background-color: #ffffff;
+    }
+    .paper-dots {
+      background-color: #ffffff;
+      background-image: radial-gradient(#cbd5e1 1.35px, transparent 1.35px);
+      background-size: 24px 24px;
+    }
+    .paper-ruled {
+      background-color: #ffffff;
+      background-image: linear-gradient(to bottom, transparent 27px, #e2e8f0 28px);
+      background-size: 100% 28px;
+    }
+    .paper-grid {
+      background-color: #ffffff;
+      background-image: 
+        linear-gradient(to right, #f1f5f9 1px, transparent 1px),
+        linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Paper Sheet Drop Shadow */
+    #paper-sheet {
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06);
+      transform-origin: center center;
+      transition: width 0.25s ease, height 0.25s ease;
+    }
+
+    /* Board Objects */
+    .board-item {
+      position: absolute;
+      cursor: grab;
+      touch-action: none;
+    }
+    .board-item:active {
+      cursor: grabbing;
+    }
+    .board-item.selected {
+      outline: 2px solid #007aff;
+      outline-offset: 2px;
+    }
+
+    /* Editable Text Areas inside items */
+    .editable-content {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      outline: none;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    /* Selection Resize & Rotate Handles */
+    .handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #ffffff;
+      border: 2px solid #007aff;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      z-index: 30;
+    }
+    .handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+    .handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+    .handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+    .handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+    .rotate-handle {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18px;
+      height: 18px;
+      background: #007aff;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      box-shadow: 0 2px 6px rgba(0,122,255,0.4);
+      z-index: 30;
+    }
+    .rotate-line {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      width: 1.5px;
+      height: 12px;
+      background: #007aff;
+      transform: translateX(-50%);
+    }
+
+    /* Hide handles during export */
+    .exporting .handle,
+    .exporting .rotate-handle,
+    .exporting .rotate-line {
+      display: none !important;
+    }
+    .exporting .board-item.selected {
+      outline: none !important;
+    }
+
+    /* Sticky Note Realistic Fold & Shadow */
+    .sticky-note {
+      box-shadow: 0 10px 20px rgba(0,0,0,0.12), 0 2px 5px rgba(0,0,0,0.06);
+      border-bottom-right-radius: 18px 4px;
+    }
+
+    /* Custom Scrollbar for popovers */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.2);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden select-none">
+
+  <!-- TOP BAR: Board Title, Page Setup, Undo/Redo, Export & Share -->
+  <header class="fixed top-3 left-3 right-3 z-40 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+    
+    <!-- Left Cluster: Brand, Board Name & History -->
+    <div class="glass-panel rounded-2xl px-3 py-1.5 flex items-center gap-2 pointer-events-auto">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-sm">
+        <i data-lucide="pen-tool" class="w-4 h-4"></i>
+      </div>
+      <div class="flex flex-col">
+        <input id="board-title" type="text" value="Untitled Board" 
+          class="bg-transparent font-semibold text-sm text-gray-900 focus:outline-none focus:bg-white/60 rounded px-1 -ml-1 w-32 sm:w-44 truncate editable-content" 
+          title="Click to rename board" />
+        <span id="save-status" class="text-[10px] text-gray-500 font-medium px-1">Saved locally</span>
+      </div>
+
+      <div class="h-5 w-[1px] bg-gray-300/80 mx-1"></div>
+
+      <!-- Undo / Redo -->
+      <button id="btn-undo" onclick="undo()" disabled class="p-2 rounded-xl text-gray-700 hover:bg-black/5 disabled:opacity-35 disabled:pointer-events-none transition" title="Undo (Ctrl+Z)">
+        <i data-lucide="undo-2" class="w-4 h-4"></i>
+      </button>
+      <button id="btn-redo" onclick="redo()" disabled class="p-2 rounded-xl text-gray-700 hover:bg-black/5 disabled:opacity-35 disabled:pointer-events-none transition" title="Redo (Ctrl+Y)">
+        <i data-lucide="redo-2" class="w-4 h-4"></i>
+      </button>
+      <button onclick="openClearModal()" class="p-2 rounded-xl text-red-500 hover:bg-red-50 transition" title="Clear Board">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Center Cluster: Page Size, Orientation & Paper Style -->
+    <div class="glass-panel rounded-2xl px-2.5 py-1.5 hidden md:flex items-center gap-1.5 pointer-events-auto">
+      <!-- Page Format -->
+      <div class="flex bg-gray-200/70 p-0.5 rounded-xl text-xs font-medium">
+        <button id="btn-a4" onclick="setPageSize('A4')" class="px-2.5 py-1 rounded-lg bg-white text-gray-900 shadow-sm transition">A4</button>
+        <button id="btn-letter" onclick="setPageSize('LETTER')" class="px-2.5 py-1 rounded-lg text-gray-600 hover:text-gray-900 transition">Letter</button>
+      </div>
+
+      <!-- Orientation Toggle -->
+      <button id="btn-orientation" onclick="toggleOrientation()" class="p-2 rounded-xl text-gray-700 hover:bg-black/5 transition flex items-center gap-1 text-xs font-medium" title="Toggle Portrait / Landscape">
+        <i id="icon-orientation" data-lucide="rectangle-vertical" class="w-4 h-4 text-blue-600"></i>
+        <span id="label-orientation">Portrait</span>
+      </button>
+
+      <div class="h-5 w-[1px] bg-gray-300/80 mx-0.5"></div>
+
+      <!-- Paper Pattern -->
+      <div class="flex items-center gap-1" title="Paper Background">
+        <button onclick="setPaperStyle('paper-blank')" data-paper="paper-blank" class="paper-style-btn p-1.5 rounded-lg hover:bg-black/5 text-gray-700 ring-2 ring-blue-500 bg-blue-50/50" title="Blank White">
+          <i data-lucide="square" class="w-4 h-4"></i>
+        </button>
+        <button onclick="setPaperStyle('paper-dots')" data-paper="paper-dots" class="paper-style-btn p-1.5 rounded-lg hover:bg-black/5 text-gray-700" title="Dot Grid">
+          <i data-lucide="grip" class="w-4 h-4"></i>
+        </button>
+        <button onclick="setPaperStyle('paper-ruled')" data-paper="paper-ruled" class="paper-style-btn p-1.5 rounded-lg hover:bg-black/5 text-gray-700" title="Ruled Lines">
+          <i data-lucide="align-justify" class="w-4 h-4"></i>
+        </button>
+        <button onclick="setPaperStyle('paper-grid')" data-paper="paper-grid" class="paper-style-btn p-1.5 rounded-lg hover:bg-black/5 text-gray-700" title="Square Grid">
+          <i data-lucide="grid" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Cluster: Mobile Page Settings + Export & Share -->
+    <div class="glass-panel rounded-2xl px-2.5 py-1.5 flex items-center gap-1.5 pointer-events-auto">
+      <!-- Mobile Page Setup Trigger -->
+      <button onclick="toggleMobilePagePopover()" class="md:hidden p-2 rounded-xl text-gray-700 hover:bg-black/5 transition" title="Page Settings">
+        <i data-lucide="file-sliders" class="w-4 h-4"></i>
+      </button>
+
+      <button onclick="exportAsPNG()" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-800 hover:bg-black/5 transition flex items-center gap-1.5" title="Download High-Res PNG">
+        <i data-lucide="image-down" class="w-4 h-4 text-emerald-600"></i>
+        <span class="hidden sm:inline">PNG</span>
+      </button>
+
+      <button onclick="exportAsPDF()" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-800 hover:bg-black/5 transition flex items-center gap-1.5" title="Download PDF">
+        <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
+        <span class="hidden sm:inline">PDF</span>
+      </button>
+
+      <button onclick="shareBoard()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-sm transition flex items-center gap-1.5">
+        <i data-lucide="share" class="w-3.5 h-3.5"></i>
+        <span>Share</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MOBILE PAGE SETTINGS POPOVER -->
+  <div id="mobile-page-popover" class="hidden fixed top-16 right-3 z-50 glass-panel rounded-2xl p-3 w-64 space-y-3 md:hidden">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-gray-500 uppercase">Paper Size</span>
+      <div class="flex bg-gray-200/80 p-0.5 rounded-lg text-xs font-medium">
+        <button onclick="setPageSize('A4')" class="px-2.5 py-1 rounded-md bg-white shadow-sm">A4</button>
+        <button onclick="setPageSize('LETTER')" class="px-2.5 py-1 rounded-md text-gray-600">Letter</button>
+      </div>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-semibold text-gray-500 uppercase">Orientation</span>
+      <button onclick="toggleOrientation()" class="px-3 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold flex items-center gap-1">
+        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+        <span id="mobile-orientation-label">Portrait</span>
+      </button>
+    </div>
+    <div>
+      <span class="text-xs font-semibold text-gray-500 uppercase block mb-1.5">Background</span>
+      <div class="grid grid-cols-4 gap-1.5">
+        <button onclick="setPaperStyle('paper-blank')" class="p-2 rounded-lg border border-gray-200 text-xs font-medium bg-white">Blank</button>
+        <button onclick="setPaperStyle('paper-dots')" class="p-2 rounded-lg border border-gray-200 text-xs font-medium bg-white">Dots</button>
+        <button onclick="setPaperStyle('paper-ruled')" class="p-2 rounded-lg border border-gray-200 text-xs font-medium bg-white">Ruled</button>
+        <button onclick="setPaperStyle('paper-grid')" class="p-2 rounded-lg border border-gray-200 text-xs font-medium bg-white">Grid</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXTUAL FORMATTING BAR (Appears when an object is selected or Drawing Tool is active) -->
+  <div id="contextual-bar" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-40 glass-pill rounded-2xl px-3 py-2 flex items-center gap-2 max-w-[95vw] overflow-x-auto">
+    <!-- Dynamically populated based on selected tool or object -->
+  </div>
+
+  <!-- MAIN INTERACTIVE WORKSPACE (Pan & Zoom Viewport) -->
+  <main id="workspace" class="relative w-full h-full flex items-center justify-center overflow-hidden cursor-default">
+    <div id="viewport-transform" class="relative flex items-center justify-center will-change-transform">
+      
+      <!-- THE FIXED DIGITAL PAPER SHEET (A4 or US Letter) -->
+      <div id="paper-sheet" class="relative paper-blank overflow-hidden transition-shadow" style="width: 794px; height: 1123px;">
+        
+        <!-- Layer 1: Vector/DOM Objects Container (Sticky Notes, Shapes, Text, Images) -->
+        <div id="objects-layer" class="absolute inset-0 w-full h-full z-10"></div>
+
+        <!-- Layer 2: High-DPI Freehand Drawing HTML5 Canvas -->
+        <canvas id="drawing-canvas" class="absolute inset-0 w-full h-full z-20 pointer-events-none"></canvas>
+
+        <!-- Subtle Page Dimension Watermark (Hidden on Export) -->
+        <div id="page-badge" class="export-ignore absolute bottom-3 right-4 text-[11px] font-medium text-gray-400/80 pointer-events-none select-none z-0">
+          A4 • Portrait
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- BOTTOM LEFT: ZOOM & PAN CONTROLS -->
+  <div class="fixed bottom-20 sm:bottom-5 left-4 z-40 glass-panel rounded-2xl px-2 py-1.5 flex items-center gap-1">
+    <button onclick="adjustZoom(-0.15)" class="p-2 rounded-xl hover:bg-black/5 text-gray-700 transition" title="Zoom Out (-)">
+      <i data-lucide="zoom-out" class="w-4 h-4"></i>
+    </button>
+    <button id="zoom-label" onclick="fitToScreen()" class="px-2 py-1 text-xs font-semibold text-gray-800 hover:bg-black/5 rounded-lg min-w-[52px] text-center" title="Reset / Fit to Screen">
+      100%
+    </button>
+    <button onclick="adjustZoom(0.15)" class="p-2 rounded-xl hover:bg-black/5 text-gray-700 transition" title="Zoom In (+)">
+      <i data-lucide="zoom-in" class="w-4 h-4"></i>
+    </button>
+    <div class="h-4 w-[1px] bg-gray-300 mx-0.5"></div>
+    <button onclick="fitToScreen()" class="p-2 rounded-xl hover:bg-black/5 text-gray-700 transition" title="Fit Page to Screen">
+      <i data-lucide="maximize-2" class="w-4 h-4"></i>
+    </button>
+    <button id="btn-hand" onclick="setActiveTool('hand')" class="tool-btn p-2 rounded-xl hover:bg-black/5 text-gray-700 transition" title="Pan Hand Tool (or hold Space)">
+      <i data-lucide="hand" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <!-- BOTTOM CENTER: IOS FREEFORM FLOATING PILL TOOLBAR -->
+  <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 glass-pill rounded-full px-3 py-2 flex items-center gap-1 sm:gap-2">
+    
+    <!-- Select / Move Tool -->
+    <button id="tool-select" onclick="setActiveTool('select')" class="tool-btn active flex flex-col items-center justify-center w-11 h-11 rounded-full bg-blue-600 text-white shadow-md transition" title="Select & Move (V)">
+      <i data-lucide="mouse-pointer-2" class="w-5 h-5"></i>
+    </button>
+
+    <!-- Freehand Drawing / Markup Tool -->
+    <button id="tool-draw" onclick="setActiveTool('draw')" class="tool-btn flex flex-col items-center justify-center w-11 h-11 rounded-full text-gray-700 hover:bg-black/5 transition" title="Freehand Draw & Markup (D)">
+      <i data-lucide="pen-line" class="w-5 h-5 text-orange-500"></i>
+    </button>
+
+    <div class="h-6 w-[1px] bg-gray-300/80 mx-0.5"></div>
+
+    <!-- Add Sticky Note -->
+    <button onclick="addStickyNote()" class="flex flex-col items-center justify-center w-11 h-11 rounded-full text-gray-700 hover:bg-black/5 active:scale-95 transition" title="Add Sticky Note">
+      <i data-lucide="sticky-note" class="w-5 h-5 text-amber-500"></i>
+    </button>
+
+    <!-- Add Shape Menu Trigger -->
+    <div class="relative">
+      <button id="btn-shapes-menu" onclick="toggleShapesPopover()" class="flex flex-col items-center justify-center w-11 h-11 rounded-full text-gray-700 hover:bg-black/5 active:scale-95 transition" title="Insert Shape or Connector">
+        <i data-lucide="shapes" class="w-5 h-5 text-emerald-600"></i>
+      </button>
+
+      <!-- Shapes Popover -->
+      <div id="shapes-popover" class="hidden absolute bottom-14 left-1/2 -translate-x-1/2 glass-panel rounded-2xl p-3 w-64 shadow-xl">
+        <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Shapes & Connectors</div>
+        <div class="grid grid-cols-4 gap-2">
+          <button onclick="addShape('rect')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Rectangle">
+            <i data-lucide="square" class="w-5 h-5"></i>
+          </button>
+          <button onclick="addShape('roundRect')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Rounded Rectangle">
+            <i data-lucide="rectangle-horizontal" class="w-5 h-5"></i>
+          </button>
+          <button onclick="addShape('circle')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Circle / Ellipse">
+            <i data-lucide="circle" class="w-5 h-5"></i>
+          </button>
+          <button onclick="addShape('triangle')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Triangle">
+            <i data-lucide="triangle" class="w-5 h-5"></i>
+          </button>
+          <button onclick="addShape('star')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Star">
+            <i data-lucide="star" class="w-5 h-5"></i>
+          </button>
+          <button onclick="addShape('bubble')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Speech Bubble">
+            <i data-lucide="message-square" class="w-5 h-5"></i>
+          </button>
+          <button onclick="addShape('line')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Line Connector">
+            <i data-lucide="minus" class="w-5 h-5"></i>
+          </button>
+          <button onclick="addShape('arrow')" class="p-2.5 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition" title="Arrow Connector">
+            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Text Box -->
+    <button onclick="addTextBox()" class="flex flex-col items-center justify-center w-11 h-11 rounded-full text-gray-700 hover:bg-black/5 active:scale-95 transition" title="Add Text Box">
+      <i data-lucide="type" class="w-5 h-5 text-indigo-600"></i>
+    </button>
+
+    <!-- Upload Image -->
+    <button onclick="document.getElementById('image-upload-input').click()" class="flex flex-col items-center justify-center w-11 h-11 rounded-full text-gray-700 hover:bg-black/5 active:scale-95 transition" title="Insert Image">
+      <i data-lucide="image-plus" class="w-5 h-5 text-pink-600"></i>
+    </button>
+    <input id="image-upload-input" type="file" accept="image/png, image/jpeg, image/webp" class="hidden" onchange="handleImageUpload(event)" />
+
+  </nav>
+
+  <!-- SHARE / EXPORT MODAL (Fallback & Rich Share Sheet) -->
+  <div id="share-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-gray-900">Share & Export Board</h3>
+        <button onclick="closeModal('share-modal')" class="p-1.5 rounded-full hover:bg-gray-100 text-gray-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div id="share-preview-container" class="bg-gray-100 rounded-2xl p-3 flex items-center justify-center max-h-56 overflow-hidden border border-gray-200">
+        <img id="share-preview-img" src="" alt="Board Preview" class="max-h-48 rounded-lg shadow-md object-contain" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <button onclick="copyImageToClipboard()" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold text-sm transition">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+          Copy Image
+        </button>
+        <button onclick="exportAsPNG(); closeModal('share-modal')" class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          Save PNG
+        </button>
+        <button onclick="exportAsPDF(); closeModal('share-modal')" class="col-span-2 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          Download Print-Ready PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLEAR BOARD CONFIRMATION MODAL -->
+  <div id="clear-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-gray-900">Clear Entire Board?</h3>
+        <p class="text-sm text-gray-500 mt-1">This will remove all drawings, sticky notes, shapes, and images from your sheet. You can still press Undo if needed.</p>
+      </div>
+      <div class="flex gap-2.5 pt-2">
+        <button onclick="closeModal('clear-modal')" class="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm transition">Cancel</button>
+        <button onclick="confirmClearBoard()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition">Clear Board</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900/90 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-200">
+    Notification
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. APPLICATION STATE & PAGE DIMENSIONS
+    // =========================================================================
+    const PAGE_DIMENSIONS = {
+      A4: { width: 794, height: 1123, mmW: 210, mmH: 297 },      // 96 DPI approx
+      LETTER: { width: 816, height: 1056, mmW: 215.9, mmH: 279.4 }
+    };
+
+    const STICKY_COLORS = [
+      { name: 'Yellow', bg: '#fef08a', text: '#422006' },
+      { name: 'Pink',   bg: '#fbcfe8', text: '#500724' },
+      { name: 'Blue',   bg: '#bae6fd', text: '#082f49' },
+      { name: 'Green',  bg: '#bbf7d0', text: '#052e16' },
+      { name: 'Purple', bg: '#e9d5ff', text: '#3b0764' },
+      { name: 'Orange', bg: '#fed7aa', text: '#431407' }
+    ];
+
+    const DRAW_COLORS = ['#1c1c1e', '#ef4444', '#f97316', '#eab308', '#22c55e', '#007aff', '#a855f7'];
+
+    let state = {
+      title: 'Untitled Board',
+      pageSize: 'A4',
+      orientation: 'portrait', // 'portrait' | 'landscape'
+      paperStyle: 'paper-blank',
+      items: [], // Array of sticky, shape, text, image objects
+      strokes: [], // Array of freehand stroke paths
+      selectedId: null
+    };
+
+    // Viewport Pan & Zoom State
+    let view = {
+      scale: 0.75,
+      panX: 0,
+      panY: 0,
+      isPanning: false,
+      spacePressed: false,
+      startX: 0,
+      startY: 0
+    };
+
+    // Active Tool & Drawing Brush Settings
+    let activeTool = 'select'; // 'select' | 'draw' | 'hand'
+    let brush = {
+      type: 'pen', // 'pen' | 'marker' | 'pencil' | 'eraser'
+      color: '#1c1c1e',
+      size: 4
+    };
+
+    // Undo/Redo Stacks
+    let historyStack = [];
+    let redoStack = [];
+    const MAX_HISTORY = 40;
+
+    // DOM References
+    const workspace = document.getElementById('workspace');
+    const viewportTransform = document.getElementById('viewport-transform');
+    const paperSheet = document.getElementById('paper-sheet');
+    const objectsLayer = document.getElementById('objects-layer');
+    const drawingCanvas = document.getElementById('drawing-canvas');
+    const ctx = drawingCanvas.getContext('2d');
+    const contextualBar = document.getElementById('contextual-bar');
+
+    // =========================================================================
+    // 2. INITIALIZATION & LOCAL STORAGE PERSISTENCE
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadFromLocalStorage();
+      applyPageDimensions(false);
+      fitToScreen();
+      renderAll();
+      setupWorkspaceEvents();
+      setupKeyboardShortcuts();
+    });
+
+    function saveToLocalStorage() {
+      try {
+        localStorage.setItem('freeform_studio_state_v1', JSON.stringify(state));
+        const status = document.getElementById('save-status');
+        status.textContent = 'Saved locally';
+      } catch (e) {
+        console.warn('LocalStorage quota exceeded or unavailable', e);
+      }
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const saved = localStorage.getItem('freeform_studio_state_v1');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state = { ...state, ...parsed, selectedId: null };
+          document.getElementById('board-title').value = state.title || 'Untitled Board';
+        } else {
+          // Seed a welcoming starter sticky note & title on first launch
+          seedWelcomeBoard();
+        }
+      } catch (e) {
+        seedWelcomeBoard();
+      }
+    }
+
+    function seedWelcomeBoard() {
+      state.items = [
+        {
+          id: uid(),
+          type: 'text',
+          x: 70,
+          y: 70,
+          width: 440,
+          height: 60,
+          rotation: 0,
+          content: 'Project Brainstorm & Notes',
+          fontFamily: 'var(--font-sans)',
+          fontSize: 30,
+          fontWeight: '700',
+          fontStyle: 'normal',
+          textDecoration: 'none',
+          textAlign: 'left',
+          color: '#1c1c1e'
+        },
+        {
+          id: uid(),
+          type: 'sticky',
+          x: 75,
+          y: 165,
+          width: 210,
+          height: 210,
+          rotation: -2,
+          bgColor: '#fef08a',
+          textColor: '#422006',
+          fontSize: 18,
+          content: 'Welcome to Freeform Studio!\n\n• Double-click any item to edit text\n• Drag corners to resize or rotate\n• Export as PNG or PDF anytime'
+        },
+        {
+          id: uid(),
+          type: 'shape',
+          shapeType: 'roundRect',
+          x: 325,
+          y: 175,
+          width: 220,
+          height: 130,
+          rotation: 1,
+          fillColor: '#e0f2fe',
+          strokeColor: '#0284c7',
+          strokeWidth: 2,
+          content: 'Double-click shape to label'
+        }
+      ];
+      saveToLocalStorage();
+    }
+
+    document.getElementById('board-title').addEventListener('input', (e) => {
+      state.title = e.target.value || 'Untitled Board';
+      saveToLocalStorage();
+    });
+
+    // =========================================================================
+    // 3. HISTORY (UNDO / REDO)
+    // =========================================================================
+    function pushHistory() {
+      const snapshot = JSON.stringify({
+        items: state.items,
+        strokes: state.strokes,
+        pageSize: state.pageSize,
+        orientation: state.orientation,
+        paperStyle: state.paperStyle
+      });
+      if (historyStack.length > 0 && historyStack[historyStack.length - 1] === snapshot) return;
+      historyStack.push(snapshot);
+      if (historyStack.length > MAX_HISTORY) historyStack.shift();
+      redoStack = [];
+      updateHistoryButtons();
+      saveToLocalStorage();
+    }
+
+    function undo() {
+      if (historyStack.length === 0) return;
+      const current = JSON.stringify({
+        items: state.items,
+        strokes: state.strokes,
+        pageSize: state.pageSize,
+        orientation: state.orientation,
+        paperStyle: state.paperStyle
+      });
+      redoStack.push(current);
+      const prev = JSON.parse(historyStack.pop());
+      Object.assign(state, prev);
+      state.selectedId = null;
+      applyPageDimensions(false);
+      renderAll();
+      updateHistoryButtons();
+      saveToLocalStorage();
+    }
+
+    function redo() {
+      if (redoStack.length === 0) return;
+      const current = JSON.stringify({
+        items: state.items,
+        strokes: state.strokes,
+        pageSize: state.pageSize,
+        orientation: state.orientation,
+        paperStyle: state.paperStyle
+      });
+      historyStack.push(current);
+      const next = JSON.parse(redoStack.pop());
+      Object.assign(state, next);
+      state.selectedId = null;
+      applyPageDimensions(false);
+      renderAll();
+      updateHistoryButtons();
+      saveToLocalStorage();
+    }
+
+    function updateHistoryButtons() {
+      document.getElementById('btn-undo').disabled = historyStack.length === 0;
+      document.getElementById('btn-redo').disabled = redoStack.length === 0;
+    }
+
+    // =========================================================================
+    // 4. PAGE SETUP, ZOOM & PAN
+    // =========================================================================
+    function setPageSize(size) {
+      if (state.pageSize === size) return;
+      pushHistory();
+      state.pageSize = size;
+      applyPageDimensions(true);
+      saveToLocalStorage();
+    }
+
+    function toggleOrientation() {
+      pushHistory();
+      state.orientation = state.orientation === 'portrait' ? 'landscape' : 'portrait';
+      applyPageDimensions(true);
+      saveToLocalStorage();
+    }
+
+    function setPaperStyle(styleClass) {
+      pushHistory();
+      state.paperStyle = styleClass;
+      paperSheet.classList.remove('paper-blank', 'paper-dots', 'paper-ruled', 'paper-grid');
+      paperSheet.classList.add(styleClass);
+
+      document.querySelectorAll('.paper-style-btn').forEach(btn => {
+        if (btn.dataset.paper === styleClass) {
+          btn.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50/50');
+        } else {
+          btn.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50/50');
+        }
+      });
+      saveToLocalStorage();
+    }
+
+    function applyPageDimensions(refit = true) {
+      const dim = PAGE_DIMENSIONS[state.pageSize];
+      const w = state.orientation === 'portrait' ? dim.width : dim.height;
+      const h = state.orientation === 'portrait' ? dim.height : dim.width;
+
+      paperSheet.style.width = `${w}px`;
+      paperSheet.style.height = `${h}px`;
+
+      // Match High-DPI Canvas Resolution
+      const dpr = 2;
+      drawingCanvas.width = w * dpr;
+      drawingCanvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Update Paper Class
+      paperSheet.classList.remove('paper-blank', 'paper-dots', 'paper-ruled', 'paper-grid');
+      paperSheet.classList.add(state.paperStyle);
+
+      // Update UI toggles
+      const btnA4 = document.getElementById('btn-a4');
+      const btnLetter = document.getElementById('btn-letter');
+      if (state.pageSize === 'A4') {
+        btnA4.className = 'px-2.5 py-1 rounded-lg bg-white text-gray-900 shadow-sm transition';
+        btnLetter.className = 'px-2.5 py-1 rounded-lg text-gray-600 hover:text-gray-900 transition';
+      } else {
+        btnLetter.className = 'px-2.5 py-1 rounded-lg bg-white text-gray-900 shadow-sm transition';
+        btnA4.className = 'px-2.5 py-1 rounded-lg text-gray-600 hover:text-gray-900 transition';
+      }
+
+      const label = state.orientation === 'portrait' ? 'Portrait' : 'Landscape';
+      document.getElementById('label-orientation').textContent = label;
+      document.getElementById('mobile-orientation-label').textContent = label;
+      document.getElementById('page-badge').textContent = `${state.pageSize} • ${label}`;
+
+      redrawStrokes();
+      if (refit) fitToScreen();
+    }
+
+    function updateTransform() {
+      viewportTransform.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.scale})`;
+      document.getElementById('zoom-label').textContent = `${Math.round(view.scale * 100)}%`;
+    }
+
+    function adjustZoom(delta) {
+      view.scale = Math.min(2.2, Math.max(0.35, +(view.scale + delta).toFixed(2)));
+      updateTransform();
+    }
+
+    function fitToScreen() {
+      const dim = PAGE_DIMENSIONS[state.pageSize];
+      const pageW = state.orientation === 'portrait' ? dim.width : dim.height;
+      const pageH = state.orientation === 'portrait' ? dim.height : dim.width;
+
+      const padding = window.innerWidth < 640 ? 48 : 150;
+      const availW = window.innerWidth - padding;
+      const availH = window.innerHeight - padding;
+
+      const scaleX = availW / pageW;
+      const scaleY = availH / pageH;
+      view.scale = Math.min(1.15, Math.max(0.35, Math.min(scaleX, scaleY)));
+      view.panX = 0;
+      view.panY = 8;
+      updateTransform();
+    }
+
+    function setupWorkspaceEvents() {
+      // Mouse wheel zoom (Ctrl/Cmd + Wheel) or pan
+      workspace.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        if (e.ctrlKey || e.metaKey) {
+          const zoomDelta = -e.deltaY * 0.0015;
+          adjustZoom(zoomDelta);
+        } else {
+          view.panX -= e.deltaX;
+          view.panY -= e.deltaY;
+          updateTransform();
+        }
+      }, { passive: false });
+
+      // Panning via Hand tool, Spacebar, Middle mouse button, or clicking empty background
+      workspace.addEventListener('pointerdown', (e) => {
+        closePopovers();
+        const isBackground = e.target === workspace || e.target === viewportTransform || e.target === paperSheet || e.target === objectsLayer;
+        
+        if (activeTool === 'hand' || view.spacePressed || e.button === 1) {
+          view.isPanning = true;
+          view.startX = e.clientX - view.panX;
+          view.startY = e.clientY - view.panY;
+          workspace.style.cursor = 'grabbing';
+          return;
+        }
+
+        if (isBackground && activeTool === 'select') {
+          selectItem(null);
+        }
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!view.isPanning) return;
+        view.panX = e.clientX - view.startX;
+        view.panY = e.clientY - view.startY;
+        updateTransform();
+      });
+
+      window.addEventListener('pointerup', () => {
+        if (view.isPanning) {
+          view.isPanning = false;
+          workspace.style.cursor = (activeTool === 'hand' || view.spacePressed) ? 'grab' : 'default';
+        }
+      });
+    }
+
+    // =========================================================================
+    // 5. TOOLS & CONTEXTUAL FORMATTING POPOVER
+    // =========================================================================
+    function setActiveTool(tool) {
+      activeTool = tool;
+      closePopovers();
+
+      // Update toolbar buttons
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+        if (btn.id === 'tool-select' || btn.id === 'tool-draw') {
+          btn.classList.add('text-gray-700');
+        }
+      });
+
+      if (tool === 'select') {
+        const btn = document.getElementById('tool-select');
+        btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+        btn.classList.remove('text-gray-700');
+        drawingCanvas.style.pointerEvents = 'none';
+        workspace.style.cursor = 'default';
+      } else if (tool === 'draw') {
+        selectItem(null);
+        const btn = document.getElementById('tool-draw');
+        btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+        btn.classList.remove('text-gray-700');
+        drawingCanvas.style.pointerEvents = 'auto';
+        drawingCanvas.style.cursor = 'crosshair';
+      } else if (tool === 'hand') {
+        selectItem(null);
+        const btn = document.getElementById('btn-hand');
+        btn.classList.add('bg-blue-600', 'text-white');
+        drawingCanvas.style.pointerEvents = 'none';
+        workspace.style.cursor = 'grab';
+      }
+
+      renderContextualBar();
+    }
+
+    function renderContextualBar() {
+      // Case 1: Freehand Drawing Tool Active
+      if (activeTool === 'draw') {
+        contextualBar.classList.remove('hidden');
+        contextualBar.innerHTML = `
+          <div class="flex items-center gap-1 bg-gray-200/70 p-1 rounded-xl">
+            <button onclick="setBrushType('pen')" class="px-2.5 py-1 rounded-lg text-xs font-semibold ${brush.type === 'pen' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-600'}">Pen</button>
+            <button onclick="setBrushType('marker')" class="px-2.5 py-1 rounded-lg text-xs font-semibold ${brush.type === 'marker' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-600'}">Highlighter</button>
+            <button onclick="setBrushType('pencil')" class="px-2.5 py-1 rounded-lg text-xs font-semibold ${brush.type === 'pencil' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-600'}">Pencil</button>
+            <button onclick="setBrushType('eraser')" class="px-2.5 py-1 rounded-lg text-xs font-semibold ${brush.type === 'eraser' ? 'bg-white shadow-sm text-rose-600' : 'text-gray-600'}">Eraser</button>
+          </div>
+          <div class="h-5 w-[1px] bg-gray-300"></div>
+          <div class="flex items-center gap-1.5">
+            ${DRAW_COLORS.map(c => `
+              <button onclick="setBrushColor('${c}')" class="w-6 h-6 rounded-full border border-black/10 transition transform ${brush.color === c && brush.type !== 'eraser' ? 'scale-125 ring-2 ring-blue-500' : ''}" style="background:${c}"></button>
+            `).join('')}
+            <input type="color" value="${brush.color}" onchange="setBrushColor(this.value)" class="w-6 h-6 rounded-full cursor-pointer border-0 bg-transparent" title="Custom Color" />
+          </div>
+          <div class="h-5 w-[1px] bg-gray-300"></div>
+          <div class="flex items-center gap-1.5">
+            ${[2, 5, 10, 18].map(sz => `
+              <button onclick="setBrushSize(${sz})" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-black/5 ${brush.size === sz ? 'bg-blue-100 text-blue-600' : 'text-gray-700'}">
+                <span class="rounded-full bg-current" style="width:${Math.min(16, sz + 2)}px; height:${Math.min(16, sz + 2)}px;"></span>
+              </button>
+            `).join('')}
+          </div>
+        `;
+        return;
+      }
+
+      // Case 2: An Item is Selected on the Board
+      const item = state.items.find(i => i.id === state.selectedId);
+      if (!item) {
+        contextualBar.classList.add('hidden');
+        return;
+      }
+
+      contextualBar.classList.remove('hidden');
+      let specificControls = '';
+
+      if (item.type === 'sticky') {
+        specificControls = `
+          <div class="flex items-center gap-1.5">
+            ${STICKY_COLORS.map(sc => `
+              <button onclick="updateSelectedItem({ bgColor: '${sc.bg}', textColor: '${sc.text}' })" 
+                class="w-6 h-6 rounded-full border border-black/15 ${item.bgColor === sc.bg ? 'ring-2 ring-blue-600 scale-110' : ''}" 
+                style="background:${sc.bg}" title="${sc.name}"></button>
+            `).join('')}
+          </div>
+          <div class="h-5 w-[1px] bg-gray-300"></div>
+          <button onclick="updateSelectedItem({ fontSize: Math.max(12, (item.fontSize || 16) - 2) })" class="px-2 py-1 rounded-lg hover:bg-black/5 text-xs font-bold">A-</button>
+          <button onclick="updateSelectedItem({ fontSize: Math.min(36, (item.fontSize || 16) + 2) })" class="px-2 py-1 rounded-lg hover:bg-black/5 text-xs font-bold">A+</button>
+        `;
+      } else if (item.type === 'shape') {
+        specificControls = `
+          <label class="flex items-center gap-1 text-xs font-medium text-gray-600 cursor-pointer" title="Fill Color">
+            <span>Fill</span>
+            <input type="color" value="${item.fillColor === 'transparent' ? '#ffffff' : item.fillColor}" onchange="updateSelectedItem({ fillColor: this.value })" class="w-6 h-6 rounded cursor-pointer border-0" />
+          </label>
+          <button onclick="updateSelectedItem({ fillColor: 'transparent' })" class="px-2 py-1 rounded-lg text-xs border border-gray-300 hover:bg-gray-100">No Fill</button>
+          <label class="flex items-center gap-1 text-xs font-medium text-gray-600 cursor-pointer" title="Border Color">
+            <span>Stroke</span>
+            <input type="color" value="${item.strokeColor}" onchange="updateSelectedItem({ strokeColor: this.value })" class="w-6 h-6 rounded cursor-pointer border-0" />
+          </label>
+          <select onchange="updateSelectedItem({ strokeWidth: Number(this.value) })" class="bg-white/80 border border-gray-200 rounded-lg text-xs px-1.5 py-1">
+            ${[1, 2, 4, 6, 8].map(w => `<option value="${w}" ${item.strokeWidth === w ? 'selected' : ''}>${w}px</option>`).join('')}
+          </select>
+        `;
+      } else if (item.type === 'text') {
+        specificControls = `
+          <select onchange="updateSelectedItem({ fontFamily: this.value })" class="bg-white/80 border border-gray-200 rounded-lg text-xs px-2 py-1 font-medium">
+            <option value="var(--font-sans)" ${item.fontFamily.includes('sans') ? 'selected' : ''}>Sans</option>
+            <option value="var(--font-serif)" ${item.fontFamily.includes('serif') ? 'selected' : ''}>Serif</option>
+            <option value="var(--font-mono)" ${item.fontFamily.includes('mono') ? 'selected' : ''}>Mono</option>
+            <option value="var(--font-hand)" ${item.fontFamily.includes('hand') ? 'selected' : ''}>Handwriting</option>
+          </select>
+          <div class="flex items-center gap-1">
+            <button onclick="updateSelectedItem({ fontSize: Math.max(12, item.fontSize - 2) })" class="px-2 py-1 rounded-lg hover:bg-black/5 text-xs font-bold">-</button>
+            <span class="text-xs font-semibold w-6 text-center">${item.fontSize}</span>
+            <button onclick="updateSelectedItem({ fontSize: Math.min(72, item.fontSize + 2) })" class="px-2 py-1 rounded-lg hover:bg-black/5 text-xs font-bold">+</button>
+          </div>
+          <button onclick="updateSelectedItem({ fontWeight: item.fontWeight === '700' ? '400' : '700' })" class="p-1.5 rounded-lg ${item.fontWeight === '700' ? 'bg-blue-100 text-blue-600' : 'hover:bg-black/5'} font-bold text-xs">B</button>
+          <button onclick="updateSelectedItem({ fontStyle: item.fontStyle === 'italic' ? 'normal' : 'italic' })" class="p-1.5 rounded-lg ${item.fontStyle === 'italic' ? 'bg-blue-100 text-blue-600' : 'hover:bg-black/5'} italic text-xs">I</button>
+          <button onclick="updateSelectedItem({ textDecoration: item.textDecoration === 'underline' ? 'none' : 'underline' })" class="p-1.5 rounded-lg ${item.textDecoration === 'underline' ? 'bg-blue-100 text-blue-600' : 'hover:bg-black/5'} underline text-xs">U</button>
+          <input type="color" value="${item.color}" onchange="updateSelectedItem({ color: this.value })" class="w-6 h-6 rounded cursor-pointer border-0" />
+        `;
+      }
+
+      // Common Layering, Duplicate & Delete Controls
+      contextualBar.innerHTML = `
+        ${specificControls}
+        ${specificControls ? '<div class="h-5 w-[1px] bg-gray-300"></div>' : ''}
+        <button onclick="bringToFront()" class="p-1.5 rounded-lg hover:bg-black/5 text-gray-700" title="Bring to Front">
+          <i data-lucide="bring-to-front" class="w-4 h-4"></i>
+        </button>
+        <button onclick="sendToBack()" class="p-1.5 rounded-lg hover:bg-black/5 text-gray-700" title="Send to Back">
+          <i data-lucide="send-to-back" class="w-4 h-4"></i>
+        </button>
+        <button onclick="duplicateSelectedItem()" class="p-1.5 rounded-lg hover:bg-black/5 text-gray-700" title="Duplicate">
+          <i data-lucide="copy-plus" class="w-4 h-4"></i>
+        </button>
+        <button onclick="deleteSelectedItem()" class="p-1.5 rounded-lg hover:bg-red-50 text-red-600" title="Delete (Del)">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      `;
+      lucide.createIcons();
+    }
+
+    function setBrushType(type) {
+      brush.type = type;
+      renderContextualBar();
+    }
+    function setBrushColor(color) {
+      brush.color = color;
+      if (brush.type === 'eraser') brush.type = 'pen';
+      renderContextualBar();
+    }
+    function setBrushSize(size) {
+      brush.size = size;
+      renderContextualBar();
+    }
+
+    // =========================================================================
+    // 6. FREEHAND DRAWING ENGINE (SMOOTH QUADRATIC CURVES + HIGHLIGHTER/PENCIL)
+    // =========================================================================
+    let isDrawing = false;
+    let currentStroke = null;
+
+    drawingCanvas.addEventListener('pointerdown', (e) => {
+      if (activeTool !== 'draw') return;
+      e.stopPropagation();
+      isDrawing = true;
+      const pt = getPaperCoordinates(e);
+      currentStroke = {
+        type: brush.type,
+        color: brush.color,
+        size: brush.type === 'marker' ? brush.size * 3.2 : (brush.type === 'eraser' ? brush.size * 3 : brush.size),
+        points: [pt]
+      };
+      state.strokes.push(currentStroke);
+      redrawStrokes();
+    });
+
+    drawingCanvas.addEventListener('pointermove', (e) => {
+      if (!isDrawing || !currentStroke) return;
+      const pt = getPaperCoordinates(e);
+      currentStroke.points.push(pt);
+      redrawStrokes();
+    });
+
+    window.addEventListener('pointerup', () => {
+      if (isDrawing) {
+        isDrawing = false;
+        currentStroke = null;
+        pushHistory();
+      }
+    });
+
+    function getPaperCoordinates(e) {
+      const rect = paperSheet.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) / view.scale,
+        y: (e.clientY - rect.top) / view.scale
+      };
+    }
+
+    function redrawStrokes() {
+      const dim = PAGE_DIMENSIONS[state.pageSize];
+      const w = state.orientation === 'portrait' ? dim.width : dim.height;
+      const h = state.orientation === 'portrait' ? dim.height : dim.width;
+
+      ctx.clearRect(0, 0, w, h);
+
+      for (const stroke of state.strokes) {
+        if (!stroke.points || stroke.points.length === 0) continue;
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = stroke.size;
+
+        if (stroke.type === 'eraser') {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.strokeStyle = 'rgba(0,0,0,1)';
+        } else if (stroke.type === 'marker') {
+          ctx.globalCompositeOperation = 'multiply';
+          ctx.globalAlpha = 0.35;
+          ctx.strokeStyle = stroke.color;
+          ctx.lineCap = 'square';
+        } else if (stroke.type === 'pencil') {
+          ctx.globalAlpha = 0.78;
+          ctx.strokeStyle = stroke.color;
+        } else {
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = stroke.color;
+        }
+
+        ctx.beginPath();
+        const pts = stroke.points;
+        ctx.moveTo(pts[0].x, pts[0].y);
+
+        if (pts.length === 1) {
+          ctx.lineTo(pts[0].x + 0.1, pts[0].y + 0.1);
+        } else {
+          for (let i = 1; i < pts.length - 1; i++) {
+            const midX = (pts[i].x + pts[i + 1].x) / 2;
+            const midY = (pts[i].y + pts[i + 1].y) / 2;
+            ctx.quadraticCurveTo(pts[i].x, pts[i].y, midX, midY);
+          }
+          const last = pts[pts.length - 1];
+          ctx.lineTo(last.x, last.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // =========================================================================
+    // 7. OBJECT CREATION (STICKY NOTES, SHAPES, TEXT, IMAGES)
+    // =========================================================================
+    function uid() {
+      return 'id_' + Math.random().toString(36).substring(2, 10);
+    }
+
+    function getCenterPosition(w, h) {
+      const dim = PAGE_DIMENSIONS[state.pageSize];
+      const pageW = state.orientation === 'portrait' ? dim.width : dim.height;
+      const pageH = state.orientation === 'portrait' ? dim.height : dim.width;
+      const jitter = (Math.random() - 0.5) * 40;
+      return {
+        x: Math.round((pageW - w) / 2 + jitter),
+        y: Math.round((pageH - h) / 2 + jitter)
+      };
+    }
+
+    function addStickyNote() {
+      setActiveTool('select');
+      pushHistory();
+      const palette = STICKY_COLORS[Math.floor(Math.random() * STICKY_COLORS.length)];
+      const pos = getCenterPosition(200, 200);
+      const item = {
+        id: uid(),
+        type: 'sticky',
+        x: pos.x,
+        y: pos.y,
+        width: 200,
+        height: 200,
+        rotation: Math.round((Math.random() - 0.5) * 4),
+        bgColor: palette.bg,
+        textColor: palette.text,
+        fontSize: 17,
+        content: 'New Sticky Note'
+      };
+      state.items.push(item);
+      state.selectedId = item.id;
+      renderAll();
+      saveToLocalStorage();
+    }
+
+    function addShape(shapeType) {
+      closePopovers();
+      setActiveTool('select');
+      pushHistory();
+      const isConnector = shapeType === 'line' || shapeType === 'arrow';
+      const w = isConnector ? 200 : 160;
+      const h = isConnector ? 44 : 140;
+      const pos = getCenterPosition(w, h);
+
+      const item = {
+        id: uid(),
+        type: 'shape',
+        shapeType,
+        x: pos.x,
+        y: pos.y,
+        width: w,
+        height: h,
+        rotation: 0,
+        fillColor: isConnector ? 'transparent' : '#dbeafe',
+        strokeColor: '#2563eb',
+        strokeWidth: 3,
+        content: ''
+      };
+      state.items.push(item);
+      state.selectedId = item.id;
+      renderAll();
+      saveToLocalStorage();
+    }
+
+    function addTextBox() {
+      setActiveTool('select');
+      pushHistory();
+      const pos = getCenterPosition(240, 60);
+      const item = {
+        id: uid(),
+        type: 'text',
+        x: pos.x,
+        y: pos.y,
+        width: 240,
+        height: 60,
+        rotation: 0,
+        content: 'Double-click to type...',
+        fontFamily: 'var(--font-sans)',
+        fontSize: 20,
+        fontWeight: '500',
+        fontStyle: 'normal',
+        textDecoration: 'none',
+        textAlign: 'left',
+        color: '#1c1c1e'
+      };
+      state.items.push(item);
+      state.selectedId = item.id;
+      renderAll();
+      saveToLocalStorage();
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          setActiveTool('select');
+          pushHistory();
+          const maxDim = 320;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            const ratio = Math.min(maxDim / w, maxDim / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          const pos = getCenterPosition(w, h);
+          const item = {
+            id: uid(),
+            type: 'image',
+            x: pos.x,
+            y: pos.y,
+            width: w,
+            height: h,
+            rotation: 0,
+            src: ev.target.result
+          };
+          state.items.push(item);
+          state.selectedId = item.id;
+          renderAll();
+          saveToLocalStorage();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    // =========================================================================
+    // 8. RENDERING BOARD OBJECTS & SELECTION / RESIZE / ROTATE INTERACTIONS
+    // =========================================================================
+    function renderAll() {
+      objectsLayer.innerHTML = '';
+      state.items.forEach(item => {
+        const el = createItemElement(item);
+        objectsLayer.appendChild(el);
+      });
+      redrawStrokes();
+      renderContextualBar();
+      lucide.createIcons();
+    }
+
+    function createItemElement(item) {
+      const wrapper = document.createElement('div');
+      wrapper.dataset.id = item.id;
+      wrapper.className = `board-item ${state.selectedId === item.id ? 'selected' : ''}`;
+      wrapper.style.left = `${item.x}px`;
+      wrapper.style.top = `${item.y}px`;
+      wrapper.style.width = `${item.width}px`;
+      wrapper.style.height = `${item.height}px`;
+      wrapper.style.transform = `rotate(${item.rotation || 0}deg)`;
+
+      // Render inner content based on item type
+      if (item.type === 'sticky') {
+        wrapper.classList.add('sticky-note', 'p-4', 'flex', 'flex-col');
+        wrapper.style.backgroundColor = item.bgColor;
+        wrapper.style.color = item.textColor;
+
+        const textEl = document.createElement('div');
+        textEl.className = 'editable-content w-full h-full overflow-hidden leading-snug';
+        textEl.style.fontFamily = 'var(--font-hand)';
+        textEl.style.fontSize = `${item.fontSize || 18}px`;
+        textEl.textContent = item.content;
+        attachEditableHandlers(wrapper, textEl, item);
+        wrapper.appendChild(textEl);
+
+      } else if (item.type === 'text') {
+        wrapper.classList.add('p-2');
+        const textEl = document.createElement('div');
+        textEl.className = 'editable-content w-full h-full leading-normal';
+        textEl.style.fontFamily = item.fontFamily;
+        textEl.style.fontSize = `${item.fontSize}px`;
+        textEl.style.fontWeight = item.fontWeight;
+        textEl.style.fontStyle = item.fontStyle;
+        textEl.style.textDecoration = item.textDecoration;
+        textEl.style.textAlign = item.textAlign;
+        textEl.style.color = item.color;
+        textEl.textContent = item.content;
+        attachEditableHandlers(wrapper, textEl, item);
+        wrapper.appendChild(textEl);
+
+      } else if (item.type === 'shape') {
+        wrapper.innerHTML = renderShapeSVG(item);
+        if (item.shapeType !== 'line' && item.shapeType !== 'arrow') {
+          const labelEl = document.createElement('div');
+          labelEl.className = 'editable-content absolute inset-3 flex items-center justify-center text-center text-sm font-medium text-gray-900 overflow-hidden';
+          labelEl.textContent = item.content || '';
+          attachEditableHandlers(wrapper, labelEl, item);
+          wrapper.appendChild(labelEl);
+        }
+
+      } else if (item.type === 'image') {
+        const img = document.createElement('img');
+        img.src = item.src;
+        img.className = 'w-full h-full object-contain rounded-lg pointer-events-none select-none';
+        wrapper.appendChild(img);
+      }
+
+      // Selection Resize & Rotate Handles
+      if (state.selectedId === item.id) {
+        wrapper.insertAdjacentHTML('beforeend', `
+          <div class="rotate-line"></div>
+          <div class="rotate-handle" data-action="rotate" title="Drag to Rotate">
+            <i data-lucide="rotate-cw" class="w-2.5 h-2.5"></i>
+          </div>
+          <div class="handle handle-nw" data-action="resize" data-dir="nw"></div>
+          <div class="handle handle-ne" data-action="resize" data-dir="ne"></div>
+          <div class="handle handle-sw" data-action="resize" data-dir="sw"></div>
+          <div class="handle handle-se" data-action="resize" data-dir="se"></div>
+        `);
+      }
+
+      // Pointer Dragging, Resizing & Rotating
+      wrapper.addEventListener('pointerdown', (e) => {
+        if (activeTool !== 'select') return;
+        if (e.target.isContentEditable) return; // Allow normal cursor placement when editing text
+        e.stopPropagation();
+
+        if (state.selectedId !== item.id) {
+          selectItem(item.id);
+        }
+
+        const action = e.target.closest('[data-action]')?.dataset.action || 'move';
+        const dir = e.target.closest('[data-dir]')?.dataset.dir || '';
+        startTransformGesture(e, item, action, dir);
+      });
+
+      return wrapper;
+    }
+
+    function attachEditableHandlers(wrapper, textEl, item) {
+      wrapper.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        textEl.contentEditable = 'true';
+        textEl.focus();
+        // Select all text on double click
+        const range = document.createRange();
+        range.selectNodeContents(textEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
+
+      textEl.addEventListener('blur', () => {
+        textEl.contentEditable = 'false';
+        if (item.content !== textEl.innerText) {
+          pushHistory();
+          item.content = textEl.innerText;
+          saveToLocalStorage();
+        }
+      });
+    }
+
+    function renderShapeSVG(item) {
+      const { shapeType, fillColor, strokeColor, strokeWidth } = item;
+      const fill = fillColor === 'transparent' ? 'none' : fillColor;
+      const sw = strokeWidth || 2;
+
+      switch (shapeType) {
+        case 'rect':
+          return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <rect x="2" y="2" width="96" height="96" fill="${fill}" stroke="${strokeColor}" stroke-width="${sw}" vector-effect="non-scaling-stroke" />
+          </svg>`;
+        case 'roundRect':
+          return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <rect x="2" y="2" width="96" height="96" rx="14" ry="14" fill="${fill}" stroke="${strokeColor}" stroke-width="${sw}" vector-effect="non-scaling-stroke" />
+          </svg>`;
+        case 'circle':
+          return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <ellipse cx="50" cy="50" rx="48" ry="48" fill="${fill}" stroke="${strokeColor}" stroke-width="${sw}" vector-effect="non-scaling-stroke" />
+          </svg>`;
+        case 'triangle':
+          return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <polygon points="50,4 96,96 4,96" fill="${fill}" stroke="${strokeColor}" stroke-width="${sw}" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+          </svg>`;
+        case 'star':
+          return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <polygon points="50,3 63,36 98,36 70,57 80,92 50,71 20,92 30,57 2,36 37,36" fill="${fill}" stroke="${strokeColor}" stroke-width="${sw}" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+          </svg>`;
+        case 'bubble':
+          return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <path d="M12,6 H88 A8,8 0 0 1 96,14 V66 A8,8 0 0 1 88,74 H36 L16,94 V74 H12 A8,8 0 0 1 4,66 V14 A8,8 0 0 1 12,6 Z" fill="${fill}" stroke="${strokeColor}" stroke-width="${sw}" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+          </svg>`;
+        case 'line':
+          return `<svg viewBox="0 0 100 20" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <line x1="2" y1="10" x2="98" y2="10" stroke="${strokeColor}" stroke-width="${sw + 1}" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+          </svg>`;
+        case 'arrow':
+          return `<svg viewBox="0 0 100 30" preserveAspectRatio="none" class="w-full h-full overflow-visible">
+            <line x1="2" y1="15" x2="90" y2="15" stroke="${strokeColor}" stroke-width="${sw + 1}" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+            <polyline points="82,6 96,15 82,24" fill="none" stroke="${strokeColor}" stroke-width="${sw + 1}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+          </svg>`;
+      }
+    }
+
+    function startTransformGesture(e, item, action, dir) {
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const orig = { x: item.x, y: item.y, width: item.width, height: item.height, rotation: item.rotation || 0 };
+      let hasMoved = false;
+
+      const paperRect = paperSheet.getBoundingClientRect();
+      const centerX = paperRect.left + (item.x + item.width / 2) * view.scale;
+      const centerY = paperRect.top + (item.y + item.height / 2) * view.scale;
+
+      function onMove(ev) {
+        if (!hasMoved) {
+          pushHistory();
+          hasMoved = true;
+        }
+        const dx = (ev.clientX - startX) / view.scale;
+        const dy = (ev.clientY - startY) / view.scale;
+
+        if (action === 'move') {
+          item.x = Math.round(orig.x + dx);
+          item.y = Math.round(orig.y + dy);
+        } else if (action === 'resize') {
+          const minSize = 36;
+          if (dir.includes('e')) item.width = Math.max(minSize, Math.round(orig.width + dx));
+          if (dir.includes('s')) item.height = Math.max(minSize, Math.round(orig.height + dy));
+          if (dir.includes('w')) {
+            const newW = Math.max(minSize, Math.round(orig.width - dx));
+            item.x = orig.x + (orig.width - newW);
+            item.width = newW;
+          }
+          if (dir.includes('n')) {
+            const newH = Math.max(minSize, Math.round(orig.height - dy));
+            item.y = orig.y + (orig.height - newH);
+            item.height = newH;
+          }
+        } else if (action === 'rotate') {
+          const angle = Math.atan2(ev.clientY - centerY, ev.clientX - centerX) * (180 / Math.PI) + 90;
+          item.rotation = Math.round(angle);
+        }
+
+        // Fast DOM update during drag
+        const el = objectsLayer.querySelector(`[data-id="${item.id}"]`);
+        if (el) {
+          el.style.left = `${item.x}px`;
+          el.style.top = `${item.y}px`;
+          el.style.width = `${item.width}px`;
+          el.style.height = `${item.height}px`;
+          el.style.transform = `rotate(${item.rotation || 0}deg)`;
+        }
+      }
+
+      function onUp() {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        if (hasMoved) saveToLocalStorage();
+      }
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    }
+
+    // =========================================================================
+    // 9. OBJECT MANIPULATION (SELECT, UPDATE, DUPLICATE, LAYERS, DELETE)
+    // =========================================================================
+    function selectItem(id) {
+      state.selectedId = id;
+      renderAll();
+    }
+
+    function updateSelectedItem(props) {
+      const item = state.items.find(i => i.id === state.selectedId);
+      if (!item) return;
+      pushHistory();
+      Object.assign(item, props);
+      renderAll();
+      saveToLocalStorage();
+    }
+
+    function duplicateSelectedItem() {
+      const item = state.items.find(i => i.id === state.selectedId);
+      if (!item) return;
+      pushHistory();
+      const copy = JSON.parse(JSON.stringify(item));
+      copy.id = uid();
+      copy.x += 24;
+      copy.y += 24;
+      state.items.push(copy);
+      state.selectedId = copy.id;
+      renderAll();
+      saveToLocalStorage();
+      showToast('Duplicated item');
+    }
+
+    function bringToFront() {
+      const idx = state.items.findIndex(i => i.id === state.selectedId);
+      if (idx === -1 || idx === state.items.length - 1) return;
+      pushHistory();
+      const [item] = state.items.splice(idx, 1);
+      state.items.push(item);
+      renderAll();
+      saveToLocalStorage();
+    }
+
+    function sendToBack() {
+      const idx = state.items.findIndex(i => i.id === state.selectedId);
+      if (idx <= 0) return;
+      pushHistory();
+      const [item] = state.items.splice(idx, 1);
+      state.items.unshift(item);
+      renderAll();
+      saveToLocalStorage();
+    }
+
+    function deleteSelectedItem() {
+      if (!state.selectedId) return;
+      pushHistory();
+      state.items = state.items.filter(i => i.id !== state.selectedId);
+      state.selectedId = null;
+      renderAll();
+      saveToLocalStorage();
+    }
+
+    function openClearModal() {
+      document.getElementById('clear-modal').classList.remove('hidden');
+    }
+
+    function confirmClearBoard() {
+      pushHistory();
+      state.items = [];
+      state.strokes = [];
+      state.selectedId = null;
+      renderAll();
+      saveToLocalStorage();
+      closeModal('clear-modal');
+      showToast('Board cleared');
+    }
+
+    // =========================================================================
+    // 10. EXPORT AS PNG, EXPORT AS PDF & WEB SHARE API
+    // =========================================================================
+    async function capturePaperCanvas() {
+      // Temporarily deselect items & hide UI watermarks for clean capture
+      const prevSelected = state.selectedId;
+      state.selectedId = null;
+      renderAll();
+      paperSheet.classList.add('exporting');
+      const badge = document.getElementById('page-badge');
+      badge.style.display = 'none';
+
+      // Temporarily reset viewport transform so html2canvas captures at exact 1:1 scale cleanly
+      const prevTransform = viewportTransform.style.transform;
+      viewportTransform.style.transform = 'none';
+
+      try {
+        const canvas = await html2canvas(paperSheet, {
+          scale: 2, // High-resolution 2x export
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+        return canvas;
+      } finally {
+        viewportTransform.style.transform = prevTransform;
+        paperSheet.classList.remove('exporting');
+        badge.style.display = '';
+        state.selectedId = prevSelected;
+        renderAll();
+      }
+    }
+
+    async function exportAsPNG() {
+      showToast('Generating high-resolution PNG...');
+      try {
+        const canvas = await capturePaperCanvas();
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const safeName = (state.title || 'freeform-board').replace(/[^a-z0-9-_]/gi, '_').toLowerCase();
+        link.download = `${safeName}.png`;
+        link.href = dataUrl;
+        link.click();
+        showToast('PNG downloaded');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to export PNG');
+      }
+    }
+
+    async function exportAsPDF() {
+      showToast('Generating print-ready PDF...');
+      try {
+        const canvas = await capturePaperCanvas();
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const { jsPDF } = window.jspdf;
+
+        const format = state.pageSize === 'A4' ? 'a4' : 'letter';
+        const pdf = new jsPDF({
+          orientation: state.orientation,
+          unit: 'mm',
+          format: format
+        });
+
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+        const safeName = (state.title || 'freeform-board').replace(/[^a-z0-9-_]/gi, '_').toLowerCase();
+        pdf.save(`${safeName}.pdf`);
+        showToast('PDF downloaded');
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to export PDF');
+      }
+    }
+
+    let lastGeneratedBlob = null;
+    let lastGeneratedDataUrl = null;
+
+    async function shareBoard() {
+      showToast('Preparing share sheet...');
+      try {
+        const canvas = await capturePaperCanvas();
+        lastGeneratedDataUrl = canvas.toDataURL('image/png');
+
+        await new Promise((resolve) => {
+          canvas.toBlob((blob) => {
+            lastGeneratedBlob = blob;
+            resolve();
+          }, 'image/png');
+        });
+
+        const safeName = (state.title || 'freeform-board').replace(/[^a-z0-9-_]/gi, '_').toLowerCase();
+        const file = new File([lastGeneratedBlob], `${safeName}.png`, { type: 'image/png' });
+
+        // Try native Web Share API with file support first (iOS / Android / Safari / Modern Desktop)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: state.title || 'Freeform Board',
+            text: 'Created with Freeform Studio',
+            files: [file]
+          });
+          return;
+        }
+
+        // Fallback Modal with Copy Image & Download Options
+        document.getElementById('share-preview-img').src = lastGeneratedDataUrl;
+        document.getElementById('share-modal').classList.remove('hidden');
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          document.getElementById('share-preview-img').src = lastGeneratedDataUrl || '';
+          document.getElementById('share-modal').classList.remove('hidden');
+        }
+      }
+    }
+
+    async function copyImageToClipboard() {
+      try {
+        if (navigator.clipboard && window.ClipboardItem && lastGeneratedBlob) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': lastGeneratedBlob })
+          ]);
+          showToast('Board image copied to clipboard!');
+          closeModal('share-modal');
+        } else {
+          showToast('Clipboard image copy not supported in this browser — use Save PNG');
+        }
+      } catch (e) {
+        showToast('Unable to copy image — use Save PNG');
+      }
+    }
+
+    // =========================================================================
+    // 11. UI HELPERS & KEYBOARD SHORTCUTS
+    // =========================================================================
+    function toggleShapesPopover() {
+      document.getElementById('shapes-popover').classList.toggle('hidden');
+    }
+
+    function toggleMobilePagePopover() {
+      document.getElementById('mobile-page-popover').classList.toggle('hidden');
+    }
+
+    function closePopovers() {
+      document.getElementById('shapes-popover').classList.add('hidden');
+      document.getElementById('mobile-page-popover').classList.add('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0');
+      }, 2400);
+    }
+
+    function setupKeyboardShortcuts() {
+      window.addEventListener('keydown', (e) => {
+        // Ignore shortcuts while typing in an input or contentEditable
+        if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) redo();
+          else undo();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          redo();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+          e.preventDefault();
+          duplicateSelectedItem();
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (state.selectedId) {
+            e.preventDefault();
+            deleteSelectedItem();
+          }
+        } else if (e.key === ' ') {
+          if (!view.spacePressed) {
+            view.spacePressed = true;
+            workspace.style.cursor = 'grab';
+          }
+        } else if (e.key.toLowerCase() === 'v') {
+          setActiveTool('select');
+        } else if (e.key.toLowerCase() === 'd') {
+          setActiveTool('draw');
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.key === ' ') {
+          view.spacePressed = false;
+          workspace.style.cursor = activeTool === 'hand' ? 'grab' : 'default';
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        fitToScreen();
+      });
+    }
+  </script>
+</body>
+</html>
