@@ -24,32 +24,111 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 24px 16px 48px;
+      padding: 24px 16px 36px;
+      display: flex;
+      flex-direction: column;
     }
 
     .container {
+      width: 100%;
       max-width: 1100px;
       margin: 0 auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
+    /* Header Layout with Top-Right Corner Links */
     .header {
       margin-bottom: 24px;
       padding-bottom: 18px;
       border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
     }
 
-    .header h1 {
+    .header-brand h1 {
       font-size: 1.75rem;
       font-weight: 800;
       letter-spacing: -0.02em;
     }
 
-    .header p {
+    .header-brand p {
       font-size: 0.92rem;
       color: var(--muted);
       margin-top: 4px;
     }
 
+    /* Social / Channel Action Pills */
+    .corner-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .yt-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .yt-pill:hover {
+      transform: translateY(-1px);
+      border-color: #fecaca;
+      background: #fef2f2;
+      color: #b91c1c;
+      box-shadow: 0 4px 10px rgba(220, 38, 38, 0.08);
+    }
+
+    .yt-icon {
+      color: #ff0000;
+      flex-shrink: 0;
+    }
+
+    .wa-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #15803d;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .wa-btn:hover {
+      transform: translateY(-1px);
+      background: #dcfce7;
+      border-color: #86efac;
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.12);
+    }
+
+    .wa-icon {
+      color: #16a34a;
+      flex-shrink: 0;
+    }
+
+    /* Grid & Cards */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -141,6 +220,30 @@
     .card-link:hover {
       background: #e2e8f0;
     }
+
+    /* Slim Footer with Bottom-Right Corner Links */
+    .footer {
+      margin-top: 36px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        align-items: flex-start;
+      }
+      .footer {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
@@ -148,8 +251,40 @@
 <div class="container">
   <!-- Directory Header -->
   <header class="header">
-    <h1>Free Web Apps</h1>
-    <p>Browser-based tools and utilities directory</p>
+    <div class="header-brand">
+      <h1>Free Web Apps</h1>
+      <p>Browser-based tools and utilities directory</p>
+    </div>
+
+    <!-- Top-Right Corner: YouTube Channel & WhatsApp Share -->
+    <div class="corner-actions" aria-label="Channel links">
+      <a
+        class="yt-pill"
+        href="https://www.youtube.com/@chiraagtheguidinglamp"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Visit Chiraag The Guiding Lamp on YouTube"
+      >
+        <svg class="yt-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+        <span>@chiraagtheguidinglamp</span>
+      </a>
+
+      <a
+        class="wa-btn"
+        href="https://wa.me/?text=Check%20out%20Chiraag%20The%20Guiding%20Lamp%20on%20YouTube%3A%20https%3A%2F%2Fwww.youtube.com%2F%40chiraagtheguidinglamp"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Share YouTube channel on WhatsApp"
+        aria-label="Share YouTube channel on WhatsApp"
+      >
+        <svg class="wa-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/>
+        </svg>
+        <span>Share</span>
+      </a>
+    </div>
   </header>
 
   <!-- Static App Cards Grid -->
@@ -407,6 +542,40 @@
       </a>
     </article>
   </main>
+
+  <!-- Slim Footer with Bottom-Right Corner Links -->
+  <footer class="footer">
+    <span>&copy; 2026 Free Web Apps Directory</span>
+
+    <div class="corner-actions" aria-label="Footer channel links">
+      <a
+        class="yt-pill"
+        href="https://www.youtube.com/@chiraagtheguidinglamp"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Visit Chiraag The Guiding Lamp on YouTube"
+      >
+        <svg class="yt-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+        <span>@chiraagtheguidinglamp</span>
+      </a>
+
+      <a
+        class="wa-btn"
+        href="https://wa.me/?text=Check%20out%20Chiraag%20The%20Guiding%20Lamp%20on%20YouTube%3A%20https%3A%2F%2Fwww.youtube.com%2F%40chiraagtheguidinglamp"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Share YouTube channel on WhatsApp"
+        aria-label="Share YouTube channel on WhatsApp"
+      >
+        <svg class="wa-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/>
+        </svg>
+        <span>Share</span>
+      </a>
+    </div>
+  </footer>
 </div>
 
 </body>
